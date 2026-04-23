@@ -1,0 +1,193 @@
+import { useEffect, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { AppShell } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, FileDown, Loader2, Sparkles, ShieldAlert, ArrowUp } from "lucide-react";
+import { TEMPLATES } from "./Drafts";
+import { AiDisclaimer } from "@/components/AiDisclaimer";
+import { toast } from "sonner";
+
+interface Risk { clause: string; severity: "low" | "medium" | "high"; note: string; }
+
+const DraftEditor = () => {
+  const { id } = useParams();
+  const { user } = useAuth();
+  const [draft, setDraft] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [chat, setChat] = useState<{role: "user" | "assistant"; content: string}[]>([]);
+  const [input, setInput] = useState("");
+  const [risks, setRisks] = useState<Risk[]>([]);
+  const saveTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!user || !id) return;
+    (async () => {
+      const { data } = await supabase.from("drafts").select("*").eq("id", id).maybeSingle();
+      setDraft(data);
+      setRisks(((data?.risk_flags as any) ?? []) as Risk[]);
+      setLoading(false);
+    })();
+  }, [id, user]);
+
+  const updateContent = (content: string) => {
+    setDraft((d: any) => ({ ...d, content }));
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      supabase.from("drafts").update({ content }).eq("id", id!).then(() => {});
+    }, 800);
+  };
+
+  const generate = async () => {
+    if (!input.trim() || !draft) return;
+    const userMsg = input.trim();
+    setInput("");
+    setChat(c => [...c, { role: "user", content: userMsg }]);
+    setGenerating(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("draft", {
+        body: {
+          template: draft.template,
+          title: draft.title,
+          conversation: [...chat, { role: "user", content: userMsg }],
+          existing_content: draft.content,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const reply = data.reply ?? "";
+      const newContent = data.content ?? draft.content;
+      const newRisks: Risk[] = data.risk_flags ?? [];
+
+      setChat(c => [...c, { role: "assistant", content: reply }]);
+      setDraft((d: any) => ({ ...d, content: newContent }));
+      setRisks(newRisks);
+
+      await supabase.from("drafts").update({
+        content: newContent,
+        risk_flags: newRisks as any,
+        inputs: { last_prompt: userMsg } as any,
+      }).eq("id", id!);
+    } catch (err: any) {
+      toast.error("Drafting failed", { description: err?.message });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const exportDraft = async (format: "pdf" | "docx") => {
+    if (!id) return;
+    setExporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("export-draft", {
+        body: { draft_id: id, format },
+      });
+      if (error) throw error;
+      const mime = format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const blob = new Blob([Uint8Array.from(atob(data.file), c => c.charCodeAt(0))], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `${draft.title}.${format}`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error("Export failed", { description: err?.message });
+    } finally { setExporting(false); }
+  };
+
+  if (loading) return <AppShell><div className="flex h-screen items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div></AppShell>;
+  if (!draft) return <AppShell><div className="container py-10">Draft not found.</div></AppShell>;
+
+  const tpl = TEMPLATES.find(t => t.key === draft.template);
+
+  return (
+    <AppShell>
+      <div className="grid h-[calc(100vh-0px)] grid-cols-[1fr_400px]">
+        {/* Document */}
+        <div className="overflow-y-auto border-r border-border">
+          <div className="container max-w-3xl py-6">
+            <Link to="/app/drafts" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> All drafts</Link>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wider text-accent">{tpl?.label ?? draft.template}</p>
+                <h1 className="mt-1 font-serif text-2xl font-semibold tracking-tight text-primary">{draft.title}</h1>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => exportDraft("docx")} disabled={exporting}><FileDown className="h-4 w-4" />DOCX</Button>
+                <Button size="sm" variant="outline" onClick={() => exportDraft("pdf")} disabled={exporting}><FileDown className="h-4 w-4" />PDF</Button>
+              </div>
+            </div>
+
+            <div className="mt-4"><AiDisclaimer /></div>
+
+            <Textarea
+              value={draft.content ?? ""}
+              onChange={e => updateContent(e.target.value)}
+              placeholder="Use the chat on the right to generate clauses, or type your draft here."
+              className="mt-5 min-h-[600px] font-serif text-[1.02rem] leading-[1.8]"
+            />
+
+            {risks.length > 0 && (
+              <div className="mt-6">
+                <h3 className="mb-3 flex items-center gap-2 font-serif text-base font-semibold text-primary"><ShieldAlert className="h-4 w-4 text-warning" /> Risk flags</h3>
+                <div className="space-y-2">
+                  {risks.map((r, i) => (
+                    <div key={i} className="rounded-lg border border-border bg-card p-3">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={`rounded-full px-2 py-0.5 font-medium ${r.severity === "high" ? "bg-destructive/15 text-destructive" : r.severity === "medium" ? "bg-warning/15 text-warning" : "bg-success/15 text-success"}`}>{r.severity}</span>
+                        <span className="font-mono text-[0.7rem] text-muted-foreground">{r.clause}</span>
+                      </div>
+                      <p className="mt-1.5 text-sm text-foreground">{r.note}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Chat */}
+        <div className="flex flex-col bg-card/40">
+          <div className="border-b border-border px-5 py-4">
+            <div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-accent" /><span className="font-serif font-semibold text-primary">Drafting assistant</span></div>
+            <p className="mt-1 text-xs text-muted-foreground">Tell me about the parties, jurisdiction, and key terms.</p>
+          </div>
+
+          <div className="flex-1 space-y-4 overflow-y-auto p-5">
+            {chat.length === 0 && (
+              <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                Try: <em>"Mutual NDA between Acme Corp (Delaware) and Beta Pvt Ltd (Bengaluru) for evaluating a SaaS partnership. Term 2 years, governed by Indian law."</em>
+              </div>
+            )}
+            {chat.map((m, i) => (
+              <div key={i} className={`rounded-lg p-3 text-sm leading-relaxed ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"}`}>
+                {m.content}
+              </div>
+            ))}
+            {generating && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-accent" /> Drafting…</div>}
+          </div>
+
+          <div className="border-t border-border bg-background p-4">
+            <Textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="Describe the parties, jurisdiction, term…"
+              className="min-h-[80px] resize-none"
+              onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) generate(); }}
+            />
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">⌘ + Enter</span>
+              <Button onClick={generate} disabled={generating || !input.trim()} size="sm" className="bg-primary hover:bg-primary-glow">{generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}Generate</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+};
+
+export default DraftEditor;
