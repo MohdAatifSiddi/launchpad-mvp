@@ -105,13 +105,13 @@ const Auth = () => {
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {mode === "signup" ? "Already have an account? " : "New to NyayAI? "}
+            {mode === "signup" ? "Already have an account? " : "New to Weybre AI? "}
             <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="font-medium text-accent hover:underline">
               {mode === "signup" ? "Sign in" : "Create account"}
             </button>
           </p>
           <p className="mt-8 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-            By continuing, you confirm you are a licensed legal professional and agree that NyayAI outputs are AI-generated and must be independently verified.
+            By continuing, you confirm you are a licensed legal professional and agree that Weybre AI outputs are AI-generated and must be independently verified.
           </p>
         </div>
       </div>
@@ -121,9 +121,9 @@ const Auth = () => {
         <div className="relative">
           <p className="font-mono text-xs uppercase tracking-widest text-accent">A note from our founders</p>
           <blockquote className="mt-4 max-w-md font-serif text-2xl leading-snug text-primary-foreground">
-            "Lawyers shouldn't compete with technology. They should be amplified by it. NyayAI is the co-counsel we wished we had at 11 PM on a Friday."
+            "Lawyers shouldn't compete with technology. They should be amplified by it. Weybre AI is the co-counsel we wished we had at 11 PM on a Friday."
           </blockquote>
-          <p className="mt-4 text-sm text-primary-foreground/70">— The NyayAI team, Bengaluru</p>
+          <p className="mt-4 text-sm text-primary-foreground/70">— The Weybre AI team, Bengaluru</p>
         </div>
       </div>
     </div>
