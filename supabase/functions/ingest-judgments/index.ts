@@ -48,6 +48,12 @@ Deno.serve(async (req) => {
     const auth = req.headers.get("Authorization") ?? "";
     const presented = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     if (!presented || presented !== SUPABASE_SERVICE_ROLE_KEY) {
+      console.log("ingest auth fail", {
+        hasAuth: !!auth,
+        presentedLen: presented.length,
+        envLen: SUPABASE_SERVICE_ROLE_KEY?.length ?? 0,
+        match: presented === SUPABASE_SERVICE_ROLE_KEY,
+      });
       return json({ error: "Forbidden" }, 403);
     }
 
