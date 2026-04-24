@@ -1,4 +1,1 @@
 project_id = "pdomtgzrtcnqlxqmfjgw"
-
-[functions.ingest-judgments]
-verify_jwt = false

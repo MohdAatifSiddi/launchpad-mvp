@@ -44,17 +44,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Auth: must present the service role key as Bearer token.
+    // With verify_jwt=true (Supabase default), only requests with a valid JWT
+    // (anon, publishable, user, or service_role) reach this function. We additionally
+    // require service_role to gate ingestion to admin scripts only.
     const auth = req.headers.get("Authorization") ?? "";
     const presented = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-    if (!presented || presented !== SUPABASE_SERVICE_ROLE_KEY) {
-      console.log("ingest auth fail", {
-        hasAuth: !!auth,
-        presentedLen: presented.length,
-        envLen: SUPABASE_SERVICE_ROLE_KEY?.length ?? 0,
-        match: presented === SUPABASE_SERVICE_ROLE_KEY,
-      });
-      return json({ error: "Forbidden" }, 403);
+    const expected = SUPABASE_SERVICE_ROLE_KEY;
+    if (!presented || presented !== expected) {
+      console.log("ingest auth fail", { presentedLen: presented.length, expectedLen: expected?.length ?? 0 });
+      return json({ error: "Forbidden — service role required" }, 403);
     }
 
     const { rows } = await req.json() as { rows: InRow[] };
