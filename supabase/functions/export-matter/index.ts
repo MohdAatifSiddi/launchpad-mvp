@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     for (let i = 1; i <= pages; i++) {
       doc.setPage(i);
       doc.setFontSize(8); doc.setTextColor(120);
-      doc.text(`NyayAI · Matter export · Page ${i} of ${pages}`, pageW / 2, pageH - 24, { align: "center" });
+      doc.text(`Weybre AI · Matter export · Page ${i} of ${pages}`, pageW / 2, pageH - 24, { align: "center" });
       doc.setTextColor(0);
     }
 

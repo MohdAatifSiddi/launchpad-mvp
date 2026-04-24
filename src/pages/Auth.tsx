@@ -34,7 +34,7 @@ const Auth = () => {
           options: { data: { full_name: fullName }, emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
-        toast.success("Welcome to NyayAI", { description: "Let's get your workspace set up." });
+        toast.success("Welcome to Weybre AI", { description: "Let's get your workspace set up." });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -62,7 +62,7 @@ const Auth = () => {
         <div className="mx-auto w-full max-w-sm">
           <Link to="/"><Logo /></Link>
           <h1 className="mt-10 font-serif text-3xl font-semibold tracking-tight text-primary">
-            {mode === "signup" ? "Open your NyayAI workspace" : "Welcome back, Counsel"}
+            {mode === "signup" ? "Open your Weybre AI workspace" : "Welcome back, Counsel"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {mode === "signup" ? "Card required at next step. 7 days. ₹999/month." : "Sign in to your research workspace."}
@@ -105,13 +105,13 @@ const Auth = () => {
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {mode === "signup" ? "Already have an account? " : "New to NyayAI? "}
+            {mode === "signup" ? "Already have an account? " : "New to Weybre AI? "}
             <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="font-medium text-accent hover:underline">
               {mode === "signup" ? "Sign in" : "Create account"}
             </button>
           </p>
           <p className="mt-8 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
-            By continuing, you confirm you are a licensed legal professional and agree that NyayAI outputs are AI-generated and must be independently verified.
+            By continuing, you confirm you are a licensed legal professional and agree that Weybre AI outputs are AI-generated and must be independently verified.
           </p>
         </div>
       </div>
@@ -121,9 +121,9 @@ const Auth = () => {
         <div className="relative">
           <p className="font-mono text-xs uppercase tracking-widest text-accent">A note from our founders</p>
           <blockquote className="mt-4 max-w-md font-serif text-2xl leading-snug text-primary-foreground">
-            "Lawyers shouldn't compete with technology. They should be amplified by it. NyayAI is the co-counsel we wished we had at 11 PM on a Friday."
+            "Lawyers shouldn't compete with technology. They should be amplified by it. Weybre AI is the co-counsel we wished we had at 11 PM on a Friday."
           </blockquote>
-          <p className="mt-4 text-sm text-primary-foreground/70">— The NyayAI team, Bengaluru</p>
+          <p className="mt-4 text-sm text-primary-foreground/70">— The Weybre AI team, Bengaluru</p>
         </div>
       </div>
     </div>
