@@ -40,8 +40,8 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // 1. Hybrid retrieval
-    const queryEmbedding = await embed(query);
+    // 1. Hybrid retrieval (keyword-only until embeddings are available)
+    const queryEmbedding = zeroEmbedding();
     const { data: judgments, error: searchErr } = await admin.rpc("search_judgments", {
       query_text: query,
       query_embedding: `[${queryEmbedding.join(",")}]`,

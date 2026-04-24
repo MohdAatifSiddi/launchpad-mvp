@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     // Pull a few relevant SC cases to ground risk flags
     const lastUserMsg = [...conversation].reverse().find((m: any) => m.role === "user")?.content ?? "";
     const groundQuery = `${template} ${title ?? ""} ${lastUserMsg}`.slice(0, 800);
-    const queryEmbedding = await embed(groundQuery);
+    const queryEmbedding = zeroEmbedding();
     const { data: judgments } = await admin.rpc("search_judgments", {
       query_text: groundQuery,
       query_embedding: `[${queryEmbedding.join(",")}]`,
