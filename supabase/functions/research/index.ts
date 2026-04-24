@@ -13,24 +13,11 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.g
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
-async function embed(text: string): Promise<number[]> {
-  // Use Gemini embedding via Lovable AI Gateway (OpenAI-compatible)
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "google/text-embedding-004", input: text }),
-  });
-  if (!r.ok) {
-    // Fallback: zero vector triggers keyword-only retrieval
-    console.error("embed failed", r.status, await r.text());
-    return new Array(1536).fill(0);
-  }
-  const j = await r.json();
-  const v: number[] = j.data?.[0]?.embedding ?? [];
-  // Pad/truncate to 1536 to match table schema
-  if (v.length === 1536) return v;
-  if (v.length > 1536) return v.slice(0, 1536);
-  return [...v, ...new Array(1536 - v.length).fill(0)];
+// Lovable AI Gateway does not yet expose an embeddings model.
+// We rely on the keyword (tsvector) half of search_judgments, which is highly
+// effective for legal text. A zero vector keeps the RPC happy without polluting ranks.
+function zeroEmbedding(): number[] {
+  return new Array(1536).fill(0);
 }
 
 Deno.serve(async (req) => {
