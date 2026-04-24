@@ -11,7 +11,6 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-const INGEST_TOKEN = Deno.env.get("INGEST_TOKEN") ?? SUPABASE_SERVICE_ROLE_KEY; // shared secret
 
 interface InRow {
   external_id?: string;
@@ -45,8 +44,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const token = req.headers.get("X-Ingest-Token");
-    if (token !== INGEST_TOKEN) return json({ error: "Forbidden" }, 403);
+    // Auth: must present the service role key as Bearer token.
+    const auth = req.headers.get("Authorization") ?? "";
+    const presented = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    if (!presented || presented !== SUPABASE_SERVICE_ROLE_KEY) {
+      return json({ error: "Forbidden" }, 403);
+    }
 
     const { rows } = await req.json() as { rows: InRow[] };
     if (!Array.isArray(rows) || rows.length === 0) return json({ error: "rows[] required" }, 400);
