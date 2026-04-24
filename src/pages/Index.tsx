@@ -35,7 +35,7 @@ const Index = () => {
               Turn 8 hours of legal research into <span className="text-accent">8 minutes.</span>
             </h1>
             <p className="mt-5 max-w-xl text-balance text-lg leading-relaxed text-muted-foreground">
-              NyayAI is the AI co-counsel for Indian advocates. Search Supreme Court judgments in plain English, get cited answers in seconds, and draft contracts grounded in real precedent.
+              Weybre AI is the AI co-counsel for Indian advocates. Search Supreme Court judgments and the open web in plain English, get cited answers in seconds, and draft contracts grounded in real precedent.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="bg-primary text-base hover:bg-primary-glow">
@@ -194,10 +194,10 @@ const Index = () => {
             Honest answers to honest questions.
           </h2>
           <div className="space-y-6">
-            <Faq q="Will NyayAI hallucinate citations?" a="Our hybrid retrieval grounds every answer in real SC judgments from our indexed corpus before the LLM responds. Every citation is clickable to its source. We deliberately surface 'Verify before filing' on every output — AI is a co-counsel, not a substitute." />
+            <Faq q="Will Weybre AI hallucinate citations?" a="Our hybrid retrieval grounds every answer in real SC judgments and live web sources before the LLM responds. Every citation is clickable to its source. We deliberately surface 'Verify before filing' on every output — AI is a co-counsel, not a substitute." />
             <Faq q="Is my client data safe?" a="Yes. Your matters, drafts, and queries are isolated per-account with row-level security. Data is hosted in India in alignment with the DPDP Act. You can delete all your data with one click in Settings." />
-            <Faq q="Which courts are covered?" a="MVP launches with the full Supreme Court of India corpus (2000–present). High Court coverage rolls out month-by-month after launch." />
-            <Faq q="What about the Bar Council and UPL rules?" a="NyayAI is a productivity tool for licensed advocates. We collect your Bar Council number at signup, and every output carries a clear AI-generated disclosure. NyayAI does not provide legal advice or solicit work from the public." />
+            <Faq q="Which sources are covered?" a="Case law: full Supreme Court of India corpus (2000–present), with High Courts rolling out month-by-month. Web: live, cited search across legal news, government portals, journals and bare acts." />
+            <Faq q="What about the Bar Council and UPL rules?" a="Weybre AI is a productivity tool for licensed advocates. We collect your Bar Council number at signup, and every output carries a clear AI-generated disclosure. Weybre AI does not provide legal advice or solicit work from the public." />
             <Faq q="Can I cancel anytime?" a="Yes. Self-serve cancellation in Settings. You keep access through the end of the billing period and can export your matters before leaving." />
           </div>
         </div>
@@ -230,11 +230,11 @@ const Index = () => {
           <div>
             <Logo />
             <p className="mt-3 max-w-md text-xs text-muted-foreground">
-              NyayAI is a legal research and drafting productivity tool for Indian advocates. Outputs are AI-generated and must be independently verified by a licensed advocate before any filing or advice. NyayAI does not constitute legal advice and does not solicit work in violation of the Bar Council of India Rules.
+              Weybre AI is a legal research and drafting productivity tool for Indian advocates. Outputs are AI-generated and must be independently verified by a licensed advocate before any filing or advice. Weybre AI does not constitute legal advice and does not solicit work in violation of the Bar Council of India Rules.
             </p>
           </div>
           <div className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} NyayAI · Made in India
+            © {new Date().getFullYear()} Weybre AI · Made in India
           </div>
         </div>
       </footer>

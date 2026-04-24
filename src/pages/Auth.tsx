@@ -34,7 +34,7 @@ const Auth = () => {
           options: { data: { full_name: fullName }, emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
-        toast.success("Welcome to NyayAI", { description: "Let's get your workspace set up." });
+        toast.success("Welcome to Weybre AI", { description: "Let's get your workspace set up." });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -62,7 +62,7 @@ const Auth = () => {
         <div className="mx-auto w-full max-w-sm">
           <Link to="/"><Logo /></Link>
           <h1 className="mt-10 font-serif text-3xl font-semibold tracking-tight text-primary">
-            {mode === "signup" ? "Open your NyayAI workspace" : "Welcome back, Counsel"}
+            {mode === "signup" ? "Open your Weybre AI workspace" : "Welcome back, Counsel"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {mode === "signup" ? "Card required at next step. 7 days. ₹999/month." : "Sign in to your research workspace."}

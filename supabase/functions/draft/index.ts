@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       `- ${c.title} (${c.neutral_citation || c.citation || "—"}): ${(c.headnote ?? c.summary ?? "").slice(0, 400)}`
     ).join("\n");
 
-    const systemPrompt = `You are NyayAI, an Indian legal drafting assistant. Generate professional, courtroom-ready drafts for Indian lawyers.
+    const systemPrompt = `You are Weybre AI, an Indian legal drafting assistant. Generate professional, courtroom-ready drafts for Indian lawyers.
 
 TEMPLATE: ${template}
 GUIDE: ${TEMPLATE_GUIDES[template]}

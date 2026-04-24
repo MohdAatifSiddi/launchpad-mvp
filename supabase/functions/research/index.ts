@@ -70,7 +70,7 @@ ${c.headnote ? `Headnote: ${c.headnote.slice(0, 1500)}` : ""}
 ${c.summary ? `Summary: ${c.summary.slice(0, 800)}` : ""}`;
     }).join("\n\n---\n\n");
 
-    const systemPrompt = `You are NyayAI, a legal research assistant for Indian lawyers. You answer questions strictly grounded in the Supreme Court of India judgments provided in CONTEXT.
+    const systemPrompt = `You are Weybre AI, a legal research assistant for Indian lawyers. You answer questions strictly grounded in the Supreme Court of India judgments provided in CONTEXT.
 
 RULES:
 1. Cite cases inline using [1], [2], etc. matching the numbered cases in CONTEXT. Every legal proposition MUST have a citation.
