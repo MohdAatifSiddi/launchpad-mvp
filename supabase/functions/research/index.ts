@@ -12,6 +12,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const TAVILY_API_KEY = Deno.env.get("TAVILY_API_KEY")!;
 
 // Lovable AI Gateway does not yet expose an embeddings model.
 // We rely on the keyword (tsvector) half of search_judgments, which is highly
@@ -35,6 +36,29 @@ async function expandLegalQuery(query: string): Promise<string> {
   if (!r.ok) return query;
   const j = await r.json();
   return (j.choices?.[0]?.message?.content ?? query).replace(/[\n,;]+/g, " ").slice(0, 300);
+}
+
+async function searchSupremeCourtWeb(query: string) {
+  if (!TAVILY_API_KEY) return [];
+  const r = await fetch("https://api.tavily.com/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      api_key: TAVILY_API_KEY,
+      query: `${query} Supreme Court of India judgment case law`,
+      search_depth: "advanced",
+      max_results: 8,
+      include_answer: false,
+      include_raw_content: false,
+      include_domains: ["sci.gov.in", "main.sci.gov.in", "indiankanoon.org", "livelaw.in", "barandbench.com"],
+    }),
+  });
+  if (!r.ok) {
+    console.error("Tavily case fallback error", r.status, await r.text());
+    return [];
+  }
+  const j = await r.json();
+  return Array.isArray(j.results) ? j.results.filter((x: any) => x?.url).slice(0, 8) : [];
 }
 
 Deno.serve(async (req) => {
@@ -86,9 +110,43 @@ Deno.serve(async (req) => {
     }
 
     if (cases.length === 0) {
+      const webCases = await searchSupremeCourtWeb(query);
+      if (webCases.length === 0) {
+        return json({
+          answer: "I searched the internal Supreme Court corpus and live legal sources but could not identify a reliable match for this query. Try adding the statute name, section number, legal doctrine, or one known case name.",
+          citations: [],
+        });
+      }
+      const webContext = webCases.map((c: any, i: number) => `[${i + 1}] ${c.title ?? "Supreme Court result"}\nURL: ${c.url}\nExcerpt: ${c.content ?? ""}`).join("\n\n---\n\n");
+      const webPrompt = `QUESTION: ${query}\n\nLIVE SUPREME COURT / LEGAL SEARCH RESULTS:\n\n${webContext}\n\nAnswer using only these search results. Cite every proposition with [n]. If a result is secondary reporting, say so.`;
+      const webAi = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "You are Weybre AI, a legal research assistant for Indian lawyers. Answer from live Supreme Court/legal search results only. Use numbered citations. Be clear when sources are court pages versus legal reporting. Never invent cases." },
+            { role: "user", content: webPrompt },
+          ],
+        }),
+      });
+      if (!webAi.ok) return json({ error: "AI synthesis failed" }, 500);
+      const webJson = await webAi.json();
       return json({
-        answer: "I searched the Supreme Court corpus but could not identify a reliable match for this query. Try adding the statute name, section number, legal doctrine, or one known case name.",
-        citations: [],
+        answer: webJson.choices?.[0]?.message?.content ?? "No answer generated.",
+        citations: webCases.map((c: any, i: number) => ({
+          n: i + 1,
+          id: c.url,
+          title: c.title ?? "Live legal source",
+          citation: c.url,
+          court: new URL(c.url).hostname.replace(/^www\./, ""),
+          decision_date: null,
+          bench: "Live source fallback",
+          judges: null,
+          headnote: c.content ?? null,
+          summary: c.content ?? null,
+          similarity: c.score ?? null,
+        })),
       });
     }
 
