@@ -1,16 +1,32 @@
-import { useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, FileDown, Loader2, Sparkles, ShieldAlert, ArrowUp } from "lucide-react";
+import { ArrowLeft, FileDown, Loader2, Sparkles, ShieldAlert, ArrowUp, Upload, Paperclip, FileText, X } from "lucide-react";
 import { TEMPLATES } from "./Drafts";
 import { AiDisclaimer } from "@/components/AiDisclaimer";
 import { toast } from "sonner";
 
 interface Risk { clause: string; severity: "low" | "medium" | "high"; note: string; }
+interface Attachment { id: string; file_name: string; storage_path: string; mime_type: string; file_size: number; status: string; error_message?: string | null; }
+
+const MAX_UPLOAD_SIZE = 20 * 1024 * 1024;
+const ALLOWED_UPLOAD_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/markdown",
+  "application/rtf",
+];
+
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 const DraftEditor = () => {
   const { id } = useParams();
@@ -22,6 +38,9 @@ const DraftEditor = () => {
   const [chat, setChat] = useState<{role: "user" | "assistant"; content: string}[]>([]);
   const [input, setInput] = useState("");
   const [risks, setRisks] = useState<Risk[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -30,6 +49,12 @@ const DraftEditor = () => {
       const { data } = await supabase.from("drafts").select("*").eq("id", id).maybeSingle();
       setDraft(data);
       setRisks(((data?.risk_flags as any) ?? []) as Risk[]);
+      const { data: files } = await (supabase as any)
+        .from("draft_attachments")
+        .select("id,file_name,storage_path,mime_type,file_size,status,error_message")
+        .eq("draft_id", id)
+        .order("created_at", { ascending: false });
+      setAttachments((files ?? []) as Attachment[]);
       setLoading(false);
     })();
   }, [id, user]);
@@ -52,6 +77,7 @@ const DraftEditor = () => {
     try {
       const { data, error } = await supabase.functions.invoke("draft", {
         body: {
+          draft_id: id,
           template: draft.template,
           title: draft.title,
           conversation: [...chat, { role: "user", content: userMsg }],
@@ -81,6 +107,60 @@ const DraftEditor = () => {
     }
   };
 
+  const uploadAttachment = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !user || !id) return;
+    if (file.size > MAX_UPLOAD_SIZE) {
+      toast.error("Upload failed", { description: "File must be 20 MB or smaller." });
+      return;
+    }
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+      toast.error("Unsupported file", { description: "Upload PDF, DOC, DOCX, TXT, Markdown, or RTF files." });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `${user.id}/${id}/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage.from("draft-documents").upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+
+      const { data, error } = await (supabase as any).from("draft_attachments").insert({
+        draft_id: id,
+        user_id: user.id,
+        file_name: file.name,
+        storage_path: storagePath,
+        mime_type: file.type,
+        file_size: file.size,
+        status: "uploaded",
+      }).select("id,file_name,storage_path,mime_type,file_size,status,error_message").single();
+      if (error) throw error;
+
+      setAttachments(prev => [data as Attachment, ...prev]);
+      toast.success("Document uploaded", { description: "Weybre AI will use it in the next draft or review request." });
+    } catch (err: any) {
+      toast.error("Upload failed", { description: err?.message });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAttachment = async (attachment: Attachment) => {
+    try {
+      await supabase.storage.from("draft-documents").remove([attachment.storage_path]);
+      const { error } = await (supabase as any).from("draft_attachments").delete().eq("id", attachment.id);
+      if (error) throw error;
+      setAttachments(prev => prev.filter(item => item.id !== attachment.id));
+    } catch (err: any) {
+      toast.error("Remove failed", { description: err?.message });
+    }
+  };
+
   const exportDraft = async (format: "pdf" | "docx") => {
     if (!id) return;
     setExporting(true);
@@ -106,7 +186,7 @@ const DraftEditor = () => {
 
   return (
     <AppShell>
-      <div className="grid h-[calc(100vh-0px)] grid-cols-[1fr_400px]">
+      <div className="grid h-[calc(100vh-0px)] grid-cols-1 lg:grid-cols-[1fr_400px]">
         {/* Document */}
         <div className="overflow-y-auto border-r border-border">
           <div className="container max-w-3xl py-6">
