@@ -1,16 +1,58 @@
-import { useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, FileDown, Loader2, Sparkles, ShieldAlert, ArrowUp } from "lucide-react";
+import { ArrowLeft, FileDown, Loader2, Sparkles, ShieldAlert, ArrowUp, Upload, Paperclip, FileText, X } from "lucide-react";
 import { TEMPLATES } from "./Drafts";
 import { AiDisclaimer } from "@/components/AiDisclaimer";
 import { toast } from "sonner";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
+import mammoth from "mammoth/mammoth.browser";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface Risk { clause: string; severity: "low" | "medium" | "high"; note: string; }
+interface Attachment { id: string; file_name: string; storage_path: string; mime_type: string; file_size: number; status: string; error_message?: string | null; }
+
+const MAX_UPLOAD_SIZE = 20 * 1024 * 1024;
+const ALLOWED_UPLOAD_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/markdown",
+  "application/rtf",
+];
+
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const extractTextFromFile = async (file: File) => {
+  if (file.type === "text/plain" || file.type === "text/markdown" || file.type === "application/rtf") {
+    return (await file.text()).slice(0, 60000);
+  }
+  if (file.type === "application/pdf") {
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages: string[] = [];
+    for (let pageNumber = 1; pageNumber <= Math.min(pdf.numPages, 80); pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const text = await page.getTextContent();
+      pages.push(text.items.map((item: any) => item.str).join(" "));
+    }
+    return pages.join("\n\n").slice(0, 60000);
+  }
+  if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return result.value.slice(0, 60000);
+  }
+  return "";
+};
 
 const DraftEditor = () => {
   const { id } = useParams();
@@ -22,6 +64,9 @@ const DraftEditor = () => {
   const [chat, setChat] = useState<{role: "user" | "assistant"; content: string}[]>([]);
   const [input, setInput] = useState("");
   const [risks, setRisks] = useState<Risk[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -30,6 +75,12 @@ const DraftEditor = () => {
       const { data } = await supabase.from("drafts").select("*").eq("id", id).maybeSingle();
       setDraft(data);
       setRisks(((data?.risk_flags as any) ?? []) as Risk[]);
+      const { data: files } = await (supabase as any)
+        .from("draft_attachments")
+        .select("id,file_name,storage_path,mime_type,file_size,status,error_message")
+        .eq("draft_id", id)
+        .order("created_at", { ascending: false });
+      setAttachments((files ?? []) as Attachment[]);
       setLoading(false);
     })();
   }, [id, user]);
@@ -52,6 +103,7 @@ const DraftEditor = () => {
     try {
       const { data, error } = await supabase.functions.invoke("draft", {
         body: {
+          draft_id: id,
           template: draft.template,
           title: draft.title,
           conversation: [...chat, { role: "user", content: userMsg }],
@@ -81,6 +133,62 @@ const DraftEditor = () => {
     }
   };
 
+  const uploadAttachment = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !user || !id) return;
+    if (file.size > MAX_UPLOAD_SIZE) {
+      toast.error("Upload failed", { description: "File must be 20 MB or smaller." });
+      return;
+    }
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+      toast.error("Unsupported file", { description: "Upload PDF, DOC, DOCX, TXT, Markdown, or RTF files." });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const extractedText = await extractTextFromFile(file);
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `${user.id}/${id}/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage.from("draft-documents").upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+
+      const { data, error } = await (supabase as any).from("draft_attachments").insert({
+        draft_id: id,
+        user_id: user.id,
+        file_name: file.name,
+        storage_path: storagePath,
+        mime_type: file.type,
+        file_size: file.size,
+        extracted_text: extractedText,
+        status: extractedText ? "processed" : "uploaded",
+      }).select("id,file_name,storage_path,mime_type,file_size,status,error_message").single();
+      if (error) throw error;
+
+      setAttachments(prev => [data as Attachment, ...prev]);
+      toast.success("Document uploaded", { description: "Weybre AI will use it in the next draft or review request." });
+    } catch (err: any) {
+      toast.error("Upload failed", { description: err?.message });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAttachment = async (attachment: Attachment) => {
+    try {
+      await supabase.storage.from("draft-documents").remove([attachment.storage_path]);
+      const { error } = await (supabase as any).from("draft_attachments").delete().eq("id", attachment.id);
+      if (error) throw error;
+      setAttachments(prev => prev.filter(item => item.id !== attachment.id));
+    } catch (err: any) {
+      toast.error("Remove failed", { description: err?.message });
+    }
+  };
+
   const exportDraft = async (format: "pdf" | "docx") => {
     if (!id) return;
     setExporting(true);
@@ -106,7 +214,7 @@ const DraftEditor = () => {
 
   return (
     <AppShell>
-      <div className="grid h-[calc(100vh-0px)] grid-cols-[1fr_400px]">
+      <div className="grid h-[calc(100vh-0px)] grid-cols-1 lg:grid-cols-[1fr_400px]">
         {/* Document */}
         <div className="overflow-y-auto border-r border-border">
           <div className="container max-w-3xl py-6">
@@ -123,6 +231,37 @@ const DraftEditor = () => {
             </div>
 
             <div className="mt-4"><AiDisclaimer /></div>
+
+            <div className="mt-5 border border-border bg-card p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2 font-serif text-base font-semibold text-primary"><Paperclip className="h-4 w-4 text-accent" /> Source documents</div>
+                  <p className="mt-1 text-sm text-muted-foreground">Upload contracts, notices, PDFs, or notes for AI drafting, review, redlines, and issue spotting.</p>
+                </div>
+                <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.md,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/rtf" onChange={uploadAttachment} />
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload
+                </Button>
+              </div>
+              {attachments.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {attachments.map(file => (
+                    <div key={file.id} className="flex items-center justify-between gap-3 border border-border bg-background px-3 py-2 text-sm">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <FileText className="h-4 w-4 shrink-0 text-accent" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">{file.file_name}</p>
+                          <p className="text-xs text-muted-foreground">{formatFileSize(file.file_size)} · {file.status === "processed" ? "ready for AI" : file.status}</p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachment(file)} aria-label={`Remove ${file.file_name}`}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <Textarea
               value={draft.content ?? ""}
@@ -160,7 +299,7 @@ const DraftEditor = () => {
           <div className="flex-1 space-y-4 overflow-y-auto p-5">
             {chat.length === 0 && (
               <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                Try: <em>"Mutual NDA between Acme Corp (Delaware) and Beta Pvt Ltd (Bengaluru) for evaluating a SaaS partnership. Term 2 years, governed by Indian law."</em>
+                Try: <em>"Review the uploaded agreement, list legal risks, then suggest safer replacement clauses."</em>
               </div>
             )}
             {chat.map((m, i) => (
@@ -175,7 +314,7 @@ const DraftEditor = () => {
             <Textarea
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder="Describe the parties, jurisdiction, term…"
+              placeholder="Ask AI to draft, review uploaded docs, spot issues, or suggest clause changes…"
               className="min-h-[80px] resize-none"
               onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) generate(); }}
             />
