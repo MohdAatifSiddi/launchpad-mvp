@@ -22,6 +22,40 @@ const TEMPLATE_GUIDES: Record<string, string> = {
   vakalatnama: "Vakalatnama under Order III CPC / Supreme Court Rules. Include: parties, court, case number, advocate(s) name, enrollment number, address for service, scope of authority, signature of client and advocate, certificate of advocate.",
 };
 
+const TEXT_MIME_TYPES = new Set(["text/plain", "text/markdown", "application/rtf"]);
+
+function cleanExtractedText(text: string): string {
+  return text.replace(/\u0000/g, " ").replace(/[\t ]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+async function getAttachmentContext(admin: ReturnType<typeof createClient>, draftId: string, userId: string) {
+  const { data: attachments, error } = await admin
+    .from("draft_attachments")
+    .select("id,file_name,storage_path,mime_type,file_size,extracted_text,status")
+    .eq("draft_id", draftId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  if (error || !attachments?.length) return "";
+
+  const parts: string[] = [];
+  for (const file of attachments as any[]) {
+    let extracted = cleanExtractedText(file.extracted_text ?? "");
+    if (!extracted && TEXT_MIME_TYPES.has(file.mime_type)) {
+      const { data: blob } = await admin.storage.from("draft-documents").download(file.storage_path);
+      if (blob) {
+        extracted = cleanExtractedText(await blob.text());
+        await admin.from("draft_attachments").update({ extracted_text: extracted.slice(0, 60000), status: "processed", error_message: null }).eq("id", file.id);
+      }
+    }
+
+    parts.push(`DOCUMENT: ${file.file_name}\nTYPE: ${file.mime_type}\nSTATUS: ${extracted ? "text extracted" : "uploaded; binary text extraction pending"}\nCONTENT:\n${extracted ? extracted.slice(0, 12000) : "No machine-readable text could be extracted yet. Use the filename/type as context and ask the lawyer to paste key clauses if detailed review is required."}`);
+  }
+
+  return parts.join("\n\n---\n\n");
+}
+
 // Lovable AI Gateway does not yet expose embeddings; use a zero vector
 // so search_judgments falls back to keyword-only retrieval.
 function zeroEmbedding(): number[] {
@@ -41,7 +75,7 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return json({ error: "Unauthorized" }, 401);
 
-    const { template, title, conversation, existing_content } = await req.json();
+    const { draft_id, template, title, conversation, existing_content } = await req.json();
     if (!template || !TEMPLATE_GUIDES[template]) {
       return json({ error: "Invalid template" }, 400);
     }
@@ -50,6 +84,7 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const attachmentContext = draft_id ? await getAttachmentContext(admin, draft_id, user.id) : "";
 
     // Pull a few relevant SC cases to ground risk flags
     const lastUserMsg = [...conversation].reverse().find((m: any) => m.role === "user")?.content ?? "";
@@ -72,11 +107,15 @@ GUIDE: ${TEMPLATE_GUIDES[template]}
 RELEVANT SUPREME COURT PRECEDENTS (use to inform risk flags):
 ${groundContext || "(none retrieved)"}
 
+UPLOADED SOURCE DOCUMENTS (use first when drafting/reviewing; cite filename in suggestions):
+${attachmentContext || "(none uploaded)"}
+
 RULES:
 1. Generate the FULL document in plain text with proper Indian legal formatting (numbered clauses, ALL CAPS for headings, "WHEREAS" recitals where appropriate).
 2. Use Indian Rupees (₹), Indian dates (DD-MM-YYYY), Indian addresses, GST where relevant.
 3. If the user has not provided enough information, ask 1-3 specific follow-up questions in your reply, but STILL generate a best-effort draft with [PLACEHOLDER] markers.
 4. Identify risk_flags for clauses that could be unenforceable, ambiguous, or carry liability — especially under Section 27 ICA (restraint of trade), Section 23 ICA (public policy), DPDP Act 2023, Stamp Act requirements, registration requirements.
+5. When uploaded documents are present, act as a document review assistant too: summarize the document, identify missing clauses, risky language, inconsistencies, enforceability problems, and propose precise replacement wording. Do not invent terms that are not in the uploaded text.
 
 Return ONLY a JSON object via the function tool, no prose.`;
 
@@ -84,7 +123,7 @@ Return ONLY a JSON object via the function tool, no prose.`;
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           ...(existing_content ? [{ role: "assistant", content: `Current draft so far:\n\n${existing_content.slice(0, 8000)}` }] : []),
