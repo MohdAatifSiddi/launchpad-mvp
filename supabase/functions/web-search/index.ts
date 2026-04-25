@@ -144,52 +144,6 @@ RULES:
     const choice = j.choices?.[0];
     const answer: string = choice?.message?.content ?? "No answer generated.";
 
-    // Extract grounding citations. Lovable AI Gateway surfaces Gemini's
-    // groundingMetadata / citation_metadata in a few possible shapes — handle them all.
-    const sources: WebSource[] = [];
-    const seen = new Set<string>();
-    const pushSource = (url: string | undefined, title?: string, snippet?: string) => {
-      if (!url || typeof url !== "string") return;
-      try {
-        const u = new URL(url);
-        const key = u.href;
-        if (seen.has(key)) return;
-        seen.add(key);
-        sources.push({
-          n: sources.length + 1,
-          title: title || u.hostname,
-          url: key,
-          domain: u.hostname.replace(/^www\./, ""),
-          snippet,
-        });
-      } catch { /* ignore invalid */ }
-    };
-
-    const gm = choice?.message?.grounding_metadata
-      ?? choice?.grounding_metadata
-      ?? choice?.message?.groundingMetadata
-      ?? choice?.groundingMetadata;
-
-    const chunks = gm?.grounding_chunks ?? gm?.groundingChunks ?? [];
-    for (const c of chunks) {
-      const web = c?.web ?? c?.Web;
-      if (web?.uri) pushSource(web.uri, web.title, web.snippet);
-    }
-
-    const cm = choice?.message?.citations ?? choice?.citations ?? gm?.citations ?? [];
-    for (const c of cm) {
-      const url = typeof c === "string" ? c : (c?.url ?? c?.uri);
-      const title = typeof c === "object" ? (c?.title ?? c?.name) : undefined;
-      const snippet = typeof c === "object" ? (c?.snippet ?? c?.text) : undefined;
-      pushSource(url, title, snippet);
-    }
-
-    // Last-resort fallback: scrape any URLs from the answer text itself
-    if (sources.length === 0) {
-      const matches = answer.match(/https?:\/\/[^\s\)\]]+/g) ?? [];
-      for (const m of matches) pushSource(m);
-    }
-
     // Log usage (best-effort)
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     await admin.from("usage_events").insert({
