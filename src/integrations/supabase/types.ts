@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      draft_attachments: {
+        Row: {
+          created_at: string
+          draft_id: string
+          error_message: string | null
+          extracted_text: string
+          file_name: string
+          file_size: number
+          id: string
+          mime_type: string
+          status: string
+          storage_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          draft_id: string
+          error_message?: string | null
+          extracted_text?: string
+          file_name: string
+          file_size?: number
+          id?: string
+          mime_type: string
+          status?: string
+          storage_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          draft_id?: string
+          error_message?: string | null
+          extracted_text?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          status?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_attachments_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drafts: {
         Row: {
           content: string
