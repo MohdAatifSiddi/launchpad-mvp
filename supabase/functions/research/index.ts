@@ -110,9 +110,43 @@ Deno.serve(async (req) => {
     }
 
     if (cases.length === 0) {
+      const webCases = await searchSupremeCourtWeb(query);
+      if (webCases.length === 0) {
+        return json({
+          answer: "I searched the internal Supreme Court corpus and live legal sources but could not identify a reliable match for this query. Try adding the statute name, section number, legal doctrine, or one known case name.",
+          citations: [],
+        });
+      }
+      const webContext = webCases.map((c: any, i: number) => `[${i + 1}] ${c.title ?? "Supreme Court result"}\nURL: ${c.url}\nExcerpt: ${c.content ?? ""}`).join("\n\n---\n\n");
+      const webPrompt = `QUESTION: ${query}\n\nLIVE SUPREME COURT / LEGAL SEARCH RESULTS:\n\n${webContext}\n\nAnswer using only these search results. Cite every proposition with [n]. If a result is secondary reporting, say so.`;
+      const webAi = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "You are Weybre AI, a legal research assistant for Indian lawyers. Answer from live Supreme Court/legal search results only. Use numbered citations. Be clear when sources are court pages versus legal reporting. Never invent cases." },
+            { role: "user", content: webPrompt },
+          ],
+        }),
+      });
+      if (!webAi.ok) return json({ error: "AI synthesis failed" }, 500);
+      const webJson = await webAi.json();
       return json({
-        answer: "I searched the Supreme Court corpus but could not identify a reliable match for this query. Try adding the statute name, section number, legal doctrine, or one known case name.",
-        citations: [],
+        answer: webJson.choices?.[0]?.message?.content ?? "No answer generated.",
+        citations: webCases.map((c: any, i: number) => ({
+          n: i + 1,
+          id: c.url,
+          title: c.title ?? "Live legal source",
+          citation: c.url,
+          court: new URL(c.url).hostname.replace(/^www\./, ""),
+          decision_date: null,
+          bench: "Live source fallback",
+          judges: null,
+          headnote: c.content ?? null,
+          summary: c.content ?? null,
+          similarity: c.score ?? null,
+        })),
       });
     }
 
