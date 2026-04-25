@@ -1,6 +1,4 @@
-// Weybre AI — AI-powered web search with citations.
-// Uses Lovable AI Gateway (Gemini) with the built-in `google_search` grounding tool
-// so the model fetches live web pages and returns inline citations + source URLs.
+// Weybre AI — production web research with real Tavily search results + cited AI synthesis.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -13,6 +11,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const TAVILY_API_KEY = Deno.env.get("TAVILY_API_KEY")!;
 
 interface WebSource {
   n: number;
@@ -20,6 +19,14 @@ interface WebSource {
   url: string;
   domain: string;
   snippet?: string;
+}
+
+interface TavilyResult {
+  title?: string;
+  url?: string;
+  content?: string;
+  score?: number;
+  raw_content?: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -38,6 +45,65 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const query = typeof body.query === "string" ? body.query.trim() : "";
     if (query.length < 3) return json({ error: "Query must be at least 3 characters" }, 400);
+    if (!TAVILY_API_KEY) return json({ error: "Tavily API key is not configured" }, 500);
+
+    const search = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: TAVILY_API_KEY,
+        query,
+        search_depth: "advanced",
+        topic: "general",
+        max_results: 8,
+        include_answer: false,
+        include_raw_content: false,
+        include_domains: [
+          "sci.gov.in",
+          "main.sci.gov.in",
+          "indiacode.nic.in",
+          "egazette.nic.in",
+          "lawmin.gov.in",
+          "barcouncilofindia.org",
+          "livelaw.in",
+          "barandbench.com",
+          "legallyindia.com",
+          "taxmann.com",
+          "prsindia.org",
+        ],
+      }),
+    });
+
+    if (search.status === 401 || search.status === 403) return json({ error: "Tavily API key was rejected" }, search.status);
+    if (search.status === 429) return json({ error: "Tavily rate limit reached. Please try again shortly." }, 429);
+    if (!search.ok) {
+      const t = await search.text();
+      console.error("Tavily error", search.status, t);
+      return json({ error: "Live search failed" }, 502);
+    }
+
+    const searchJson = await search.json();
+    const results: TavilyResult[] = Array.isArray(searchJson.results) ? searchJson.results : [];
+    const sources: WebSource[] = results
+      .filter((r) => r.url)
+      .slice(0, 8)
+      .map((r, i) => {
+        const u = new URL(r.url!);
+        return {
+          n: i + 1,
+          title: r.title || u.hostname,
+          url: u.href,
+          domain: u.hostname.replace(/^www\./, ""),
+          snippet: r.content,
+        };
+      });
+
+    if (sources.length === 0) {
+      return json({
+        answer: "I could not find reliable live web sources for this query. Try making the question more specific or removing domain-specific terms.",
+        sources: [],
+      });
+    }
 
     const systemPrompt = `You are Weybre AI's web research assistant for Indian lawyers. Use live web search to answer the question accurately.
 
@@ -51,7 +117,8 @@ RULES:
 7. End with a one-line "Verify before relying on this for filings" note.
 8. Never give legal advice — frame as "according to [source]…" not "you should…".`;
 
-    const userPrompt = `QUESTION: ${query}\n\nUse web search to gather current, authoritative information and answer with [n] citations.`;
+    const sourceContext = sources.map((s) => `[${s.n}] ${s.title}\nURL: ${s.url}\nSource: ${s.domain}\nExcerpt: ${s.snippet ?? ""}`).join("\n\n---\n\n");
+    const userPrompt = `QUESTION: ${query}\n\nREAL WEB SEARCH RESULTS FROM TAVILY:\n\n${sourceContext}\n\nAnswer using only these sources. Use [n] citations that match the numbered sources.`;
 
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -62,8 +129,6 @@ RULES:
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        // Enable Gemini's built-in Google Search grounding via Lovable AI Gateway.
-        tools: [{ type: "google_search" }],
       }),
     });
 
@@ -78,52 +143,6 @@ RULES:
     const j = await r.json();
     const choice = j.choices?.[0];
     const answer: string = choice?.message?.content ?? "No answer generated.";
-
-    // Extract grounding citations. Lovable AI Gateway surfaces Gemini's
-    // groundingMetadata / citation_metadata in a few possible shapes — handle them all.
-    const sources: WebSource[] = [];
-    const seen = new Set<string>();
-    const pushSource = (url: string | undefined, title?: string, snippet?: string) => {
-      if (!url || typeof url !== "string") return;
-      try {
-        const u = new URL(url);
-        const key = u.href;
-        if (seen.has(key)) return;
-        seen.add(key);
-        sources.push({
-          n: sources.length + 1,
-          title: title || u.hostname,
-          url: key,
-          domain: u.hostname.replace(/^www\./, ""),
-          snippet,
-        });
-      } catch { /* ignore invalid */ }
-    };
-
-    const gm = choice?.message?.grounding_metadata
-      ?? choice?.grounding_metadata
-      ?? choice?.message?.groundingMetadata
-      ?? choice?.groundingMetadata;
-
-    const chunks = gm?.grounding_chunks ?? gm?.groundingChunks ?? [];
-    for (const c of chunks) {
-      const web = c?.web ?? c?.Web;
-      if (web?.uri) pushSource(web.uri, web.title, web.snippet);
-    }
-
-    const cm = choice?.message?.citations ?? choice?.citations ?? gm?.citations ?? [];
-    for (const c of cm) {
-      const url = typeof c === "string" ? c : (c?.url ?? c?.uri);
-      const title = typeof c === "object" ? (c?.title ?? c?.name) : undefined;
-      const snippet = typeof c === "object" ? (c?.snippet ?? c?.text) : undefined;
-      pushSource(url, title, snippet);
-    }
-
-    // Last-resort fallback: scrape any URLs from the answer text itself
-    if (sources.length === 0) {
-      const matches = answer.match(/https?:\/\/[^\s\)\]]+/g) ?? [];
-      for (const m of matches) pushSource(m);
-    }
 
     // Log usage (best-effort)
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
