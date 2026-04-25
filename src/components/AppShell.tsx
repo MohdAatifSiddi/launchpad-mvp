@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { forwardRef, ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/Logo";
@@ -15,7 +15,7 @@ const NAV = [
   { to: "/app/settings", label: "Settings", icon: SettingsIcon },
 ];
 
-export const AppShell = ({ children, title, action }: { children: ReactNode; title?: string; action?: ReactNode }) => {
+export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?: string; action?: ReactNode }>(({ children, title, action }, ref) => {
   const { user, signOut } = useAuth();
   const { sub, loading, isActive } = useSubscription();
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ export const AppShell = ({ children, title, action }: { children: ReactNode; tit
   }, [loading, sub, isActive, location.pathname, navigate]);
 
   return (
-    <div className="grid min-h-screen grid-cols-[260px_1fr] bg-hero">
+    <div ref={ref} className="grid min-h-screen grid-cols-[260px_1fr] bg-hero">
       {/* Sidebar */}
       <aside className="sticky top-0 flex h-screen flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="border-b border-sidebar-border p-5">
@@ -91,4 +91,6 @@ export const AppShell = ({ children, title, action }: { children: ReactNode; tit
       </main>
     </div>
   );
-};
+});
+
+AppShell.displayName = "AppShell";
