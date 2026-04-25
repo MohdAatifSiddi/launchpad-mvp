@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     }
 
     let cases = judgments ?? [];
-    if (cases.length === 0) {
+    if (cases.length < 4) {
       const expandedQuery = await expandLegalQuery(query);
       const { data: expandedJudgments, error: expandedErr } = await admin.rpc("search_judgments", {
         query_text: expandedQuery,
@@ -78,7 +78,11 @@ Deno.serve(async (req) => {
         match_count: 8,
       });
       if (expandedErr) console.error("expanded search error", expandedErr);
-      cases = expandedJudgments ?? [];
+      const seen = new Set(cases.map((c: any) => c.id));
+      for (const c of expandedJudgments ?? []) {
+        if (!seen.has(c.id)) cases.push(c);
+      }
+      cases = cases.slice(0, 8);
     }
 
     if (cases.length === 0) {
