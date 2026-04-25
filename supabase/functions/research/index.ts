@@ -20,6 +20,23 @@ function zeroEmbedding(): number[] {
   return new Array(1536).fill(0);
 }
 
+async function expandLegalQuery(query: string): Promise<string> {
+  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash-lite",
+      messages: [
+        { role: "system", content: "Convert an Indian legal research question into concise Supreme Court search keywords. Return only keywords and legal phrases, no explanation." },
+        { role: "user", content: query },
+      ],
+    }),
+  });
+  if (!r.ok) return query;
+  const j = await r.json();
+  return (j.choices?.[0]?.message?.content ?? query).replace(/[\n,;]+/g, " ").slice(0, 300);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -52,10 +69,21 @@ Deno.serve(async (req) => {
       return json({ error: "Search failed: " + searchErr.message }, 500);
     }
 
-    const cases = judgments ?? [];
+    let cases = judgments ?? [];
+    if (cases.length === 0) {
+      const expandedQuery = await expandLegalQuery(query);
+      const { data: expandedJudgments, error: expandedErr } = await admin.rpc("search_judgments", {
+        query_text: expandedQuery,
+        query_embedding: `[${queryEmbedding.join(",")}]`,
+        match_count: 8,
+      });
+      if (expandedErr) console.error("expanded search error", expandedErr);
+      cases = expandedJudgments ?? [];
+    }
+
     if (cases.length === 0) {
       return json({
-        answer: "I could not find any relevant Supreme Court judgments in the corpus for this query. Try rephrasing, using key legal terms (e.g. 'specific performance', 'Section 138 NI Act'), or broadening the question.",
+        answer: "I searched the Supreme Court corpus but could not identify a reliable match for this query. Try adding the statute name, section number, legal doctrine, or one known case name.",
         citations: [],
       });
     }
