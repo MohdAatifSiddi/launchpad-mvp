@@ -45,6 +45,65 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const query = typeof body.query === "string" ? body.query.trim() : "";
     if (query.length < 3) return json({ error: "Query must be at least 3 characters" }, 400);
+    if (!TAVILY_API_KEY) return json({ error: "Tavily API key is not configured" }, 500);
+
+    const search = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: TAVILY_API_KEY,
+        query,
+        search_depth: "advanced",
+        topic: "general",
+        max_results: 8,
+        include_answer: false,
+        include_raw_content: false,
+        include_domains: [
+          "sci.gov.in",
+          "main.sci.gov.in",
+          "indiacode.nic.in",
+          "egazette.nic.in",
+          "lawmin.gov.in",
+          "barcouncilofindia.org",
+          "livelaw.in",
+          "barandbench.com",
+          "legallyindia.com",
+          "taxmann.com",
+          "prsindia.org",
+        ],
+      }),
+    });
+
+    if (search.status === 401 || search.status === 403) return json({ error: "Tavily API key was rejected" }, search.status);
+    if (search.status === 429) return json({ error: "Tavily rate limit reached. Please try again shortly." }, 429);
+    if (!search.ok) {
+      const t = await search.text();
+      console.error("Tavily error", search.status, t);
+      return json({ error: "Live search failed" }, 502);
+    }
+
+    const searchJson = await search.json();
+    const results: TavilyResult[] = Array.isArray(searchJson.results) ? searchJson.results : [];
+    const sources: WebSource[] = results
+      .filter((r) => r.url)
+      .slice(0, 8)
+      .map((r, i) => {
+        const u = new URL(r.url!);
+        return {
+          n: i + 1,
+          title: r.title || u.hostname,
+          url: u.href,
+          domain: u.hostname.replace(/^www\./, ""),
+          snippet: r.content,
+        };
+      });
+
+    if (sources.length === 0) {
+      return json({
+        answer: "I could not find reliable live web sources for this query. Try making the question more specific or removing domain-specific terms.",
+        sources: [],
+      });
+    }
 
     const systemPrompt = `You are Weybre AI's web research assistant for Indian lawyers. Use live web search to answer the question accurately.
 
@@ -58,7 +117,8 @@ RULES:
 7. End with a one-line "Verify before relying on this for filings" note.
 8. Never give legal advice — frame as "according to [source]…" not "you should…".`;
 
-    const userPrompt = `QUESTION: ${query}\n\nUse web search to gather current, authoritative information and answer with [n] citations.`;
+    const sourceContext = sources.map((s) => `[${s.n}] ${s.title}\nURL: ${s.url}\nSource: ${s.domain}\nExcerpt: ${s.snippet ?? ""}`).join("\n\n---\n\n");
+    const userPrompt = `QUESTION: ${query}\n\nREAL WEB SEARCH RESULTS FROM TAVILY:\n\n${sourceContext}\n\nAnswer using only these sources. Use [n] citations that match the numbered sources.`;
 
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -69,8 +129,6 @@ RULES:
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        // Enable Gemini's built-in Google Search grounding via Lovable AI Gateway.
-        tools: [{ type: "google_search" }],
       }),
     });
 
