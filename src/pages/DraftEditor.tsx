@@ -204,6 +204,37 @@ const DraftEditor = () => {
 
             <div className="mt-4"><AiDisclaimer /></div>
 
+            <div className="mt-5 border border-border bg-card p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2 font-serif text-base font-semibold text-primary"><Paperclip className="h-4 w-4 text-accent" /> Source documents</div>
+                  <p className="mt-1 text-sm text-muted-foreground">Upload contracts, notices, PDFs, or notes for AI drafting, review, redlines, and issue spotting.</p>
+                </div>
+                <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.md,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/rtf" onChange={uploadAttachment} />
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload
+                </Button>
+              </div>
+              {attachments.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {attachments.map(file => (
+                    <div key={file.id} className="flex items-center justify-between gap-3 border border-border bg-background px-3 py-2 text-sm">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <FileText className="h-4 w-4 shrink-0 text-accent" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">{file.file_name}</p>
+                          <p className="text-xs text-muted-foreground">{formatFileSize(file.file_size)} · {file.status === "processed" ? "ready for AI" : file.status}</p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachment(file)} aria-label={`Remove ${file.file_name}`}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <Textarea
               value={draft.content ?? ""}
               onChange={e => updateContent(e.target.value)}
@@ -240,7 +271,7 @@ const DraftEditor = () => {
           <div className="flex-1 space-y-4 overflow-y-auto p-5">
             {chat.length === 0 && (
               <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                Try: <em>"Mutual NDA between Acme Corp (Delaware) and Beta Pvt Ltd (Bengaluru) for evaluating a SaaS partnership. Term 2 years, governed by Indian law."</em>
+                Try: <em>"Review the uploaded agreement, list legal risks, then suggest safer replacement clauses."</em>
               </div>
             )}
             {chat.map((m, i) => (
@@ -255,7 +286,7 @@ const DraftEditor = () => {
             <Textarea
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder="Describe the parties, jurisdiction, term…"
+              placeholder="Ask AI to draft, review uploaded docs, spot issues, or suggest clause changes…"
               className="min-h-[80px] resize-none"
               onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) generate(); }}
             />
