@@ -1,6 +1,4 @@
-// Weybre AI — AI-powered web search with citations.
-// Uses Lovable AI Gateway (Gemini) with the built-in `google_search` grounding tool
-// so the model fetches live web pages and returns inline citations + source URLs.
+// Weybre AI — production web research with real Tavily search results + cited AI synthesis.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -13,6 +11,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const TAVILY_API_KEY = Deno.env.get("TAVILY_API_KEY")!;
 
 interface WebSource {
   n: number;
@@ -20,6 +19,14 @@ interface WebSource {
   url: string;
   domain: string;
   snippet?: string;
+}
+
+interface TavilyResult {
+  title?: string;
+  url?: string;
+  content?: string;
+  score?: number;
+  raw_content?: string | null;
 }
 
 Deno.serve(async (req) => {
