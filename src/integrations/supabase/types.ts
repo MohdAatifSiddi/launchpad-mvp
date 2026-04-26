@@ -56,6 +56,45 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_plans: {
+        Row: {
+          active: boolean
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          interval: string
+          plan: Database["public"]["Enums"]["plan_tier"]
+          provider: string
+          provider_plan_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          interval?: string
+          plan: Database["public"]["Enums"]["plan_tier"]
+          provider?: string
+          provider_plan_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          interval?: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          provider?: string
+          provider_plan_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       draft_attachments: {
         Row: {
           created_at: string
