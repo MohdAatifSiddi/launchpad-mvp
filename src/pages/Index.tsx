@@ -40,7 +40,7 @@ const Index = () => {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="bg-primary text-base hover:bg-primary-glow">
                 <Link to="/auth?mode=signup">
-                  Start 7-day paid trial — ₹999/mo <ArrowRight className="ml-1 h-4 w-4" />
+                  Start with Razorpay — ₹999/mo <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="text-base">
@@ -213,11 +213,11 @@ const Index = () => {
               Be among the first 100 lawyers to win back their evenings.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-primary-foreground/80">
-              Start your 7-day paid trial. No call. No demo. Just open the app and start researching.
+              Subscribe securely with Razorpay. No call. No demo. Just open the app and start researching.
             </p>
             <Button asChild size="lg" className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90">
               <Link to="/auth?mode=signup">
-                <IndianRupee className="h-4 w-4" /> Start trial — ₹999/month
+                <IndianRupee className="h-4 w-4" /> Subscribe — ₹999/month
               </Link>
             </Button>
           </div>
@@ -233,8 +233,14 @@ const Index = () => {
               Weybre AI is a legal research and drafting productivity tool for Indian advocates. Outputs are AI-generated and must be independently verified by a licensed advocate before any filing or advice. Weybre AI does not constitute legal advice and does not solicit work in violation of the Bar Council of India Rules.
             </p>
           </div>
-          <div className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Weybre AI · Made in India
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground md:justify-end">
+            <Link to="/legal/about" className="hover:text-foreground">About</Link>
+            <Link to="/legal/terms" className="hover:text-foreground">Terms</Link>
+            <Link to="/legal/privacy" className="hover:text-foreground">Privacy</Link>
+            <Link to="/legal/refund" className="hover:text-foreground">Refunds</Link>
+            <Link to="/legal/disclaimer" className="hover:text-foreground">Disclaimer</Link>
+            <Link to="/legal/contact" className="hover:text-foreground">Contact</Link>
+            <span>© {new Date().getFullYear()} Weybre AI · Made in India</span>
           </div>
         </div>
       </footer>

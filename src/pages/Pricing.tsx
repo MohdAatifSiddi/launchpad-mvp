@@ -1,11 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
-import { Check, IndianRupee, Loader2 } from "lucide-react";
+import { Check, IndianRupee, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
 
 const Pricing = () => {
   const { user } = useAuth();
@@ -15,17 +21,33 @@ const Pricing = () => {
   const startTrial = async (plan: "solo" | "firm") => {
     if (!user) { navigate("/auth?mode=signup"); return; }
     setLoading(plan);
-    // Trial stub — Razorpay subscription is wired in a later step.
-    const trialEnd = new Date(); trialEnd.setDate(trialEnd.getDate() + 7);
-    const { error } = await supabase.from("subscriptions").upsert({
-      user_id: user.id,
-      plan,
-      status: "trialing",
-      trial_end: trialEnd.toISOString(),
-    }, { onConflict: "user_id" });
-    if (error) { toast.error(error.message); setLoading(null); return; }
-    toast.success("7-day trial started", { description: "Welcome to your research workspace." });
-    navigate("/app");
+    try {
+      await loadRazorpay();
+      const { data, error } = await supabase.functions.invoke("create-razorpay-subscription", { body: { plan } });
+      if (error) throw error;
+      if (!window.Razorpay) throw new Error("Razorpay checkout did not load");
+
+      const checkout = new window.Razorpay({
+        key: data.key_id,
+        name: data.name,
+        description: data.description,
+        subscription_id: data.subscription_id,
+        currency: data.currency,
+        amount: data.amount,
+        prefill: data.prefill,
+        handler: async (response: any) => {
+          const verified = await supabase.functions.invoke("verify-razorpay-payment", { body: response });
+          if (verified.error) throw verified.error;
+          toast.success("Payment verified", { description: "Your Weybre AI workspace is active." });
+          navigate("/app");
+        },
+        modal: { ondismiss: () => setLoading(null) },
+      });
+      checkout.open();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Unable to start Razorpay checkout");
+      setLoading(null);
+    }
   };
 
   return (
@@ -37,7 +59,7 @@ const Pricing = () => {
           Start your 7-day paid trial
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
-          Card on file via Razorpay. Cancel anytime in Settings — no charge if you cancel before day 7.
+          Secure subscription checkout via Razorpay. Cancel anytime in Settings.
         </p>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2">
@@ -63,12 +85,22 @@ const Pricing = () => {
         </div>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Prices in INR · GST extra · By starting a trial you agree to our terms and the BCI disclosure.
+          Prices in INR · GST extra · By paying you agree to our Terms, Privacy Policy, Refund Policy, and AI Disclaimer.
         </p>
       </main>
     </div>
   );
 };
+
+const loadRazorpay = () => new Promise<void>((resolve, reject) => {
+  if (window.Razorpay) { resolve(); return; }
+  const script = document.createElement("script");
+  script.src = "https://checkout.razorpay.com/v1/checkout.js";
+  script.async = true;
+  script.onload = () => resolve();
+  script.onerror = () => reject(new Error("Could not load Razorpay checkout"));
+  document.body.appendChild(script);
+});
 
 const Plan = ({ name, price, period, features, cta, highlight, loading, onClick }: any) => (
   <div className={`relative rounded-xl border p-7 ${highlight ? "border-accent/50 shadow-glow bg-card" : "border-border bg-card"}`}>
@@ -79,7 +111,7 @@ const Plan = ({ name, price, period, features, cta, highlight, loading, onClick 
       <span className="text-sm text-muted-foreground">{period}</span>
     </div>
     <Button onClick={onClick} disabled={loading} className="mt-5 w-full" variant={highlight ? "default" : "outline"}>
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <IndianRupee className="h-4 w-4" />}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : highlight ? <ShieldCheck className="h-4 w-4" /> : <IndianRupee className="h-4 w-4" />}
       {cta}
     </Button>
     <ul className="mt-6 space-y-2.5 text-sm">
