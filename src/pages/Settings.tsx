@@ -20,6 +20,7 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -54,6 +55,13 @@ const Settings = () => {
     await signOut(); nav("/");
   };
 
+  const cancelPlan = async () => {
+    setCancelling(true);
+    const { error } = await supabase.functions.invoke("cancel-razorpay-subscription");
+    setCancelling(false);
+    if (error) toast.error(error.message); else toast.success("Cancellation requested", { description: "Your plan will stop through Razorpay." });
+  };
+
   if (loading) return <AppShell title="Settings"><div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div></AppShell>;
 
   return (
@@ -78,7 +86,10 @@ const Settings = () => {
               {sub?.trial_end && <p className="mt-1 text-xs text-muted-foreground">Trial ends {new Date(sub.trial_end).toLocaleDateString("en-IN")}</p>}
               {sub?.current_period_end && <p className="mt-1 text-xs text-muted-foreground">Renews {new Date(sub.current_period_end).toLocaleDateString("en-IN")}</p>}
             </div>
-            <Button variant="outline" onClick={() => nav("/pricing")}>Manage plan</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => nav("/pricing")}>Manage plan</Button>
+              {sub?.status === "active" && <Button variant="destructive" onClick={cancelPlan} disabled={cancelling}>{cancelling && <Loader2 className="h-4 w-4 animate-spin" />}Cancel</Button>}
+            </div>
           </div>
         </section>
 
