@@ -16,6 +16,7 @@ import MatterDetail from "./pages/MatterDetail.tsx";
 import Drafts from "./pages/Drafts.tsx";
 import DraftEditor from "./pages/DraftEditor.tsx";
 import Settings from "./pages/Settings.tsx";
+import Legal from "./pages/Legal.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/legal/:slug" element={<Legal />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/app/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
