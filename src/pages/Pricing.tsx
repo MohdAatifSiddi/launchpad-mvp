@@ -35,7 +35,6 @@ const Pricing = () => {
         currency: data.currency,
         amount: data.amount,
         prefill: data.prefill,
-        theme: { color: "#172554" },
         handler: async (response: any) => {
           const verified = await supabase.functions.invoke("verify-razorpay-payment", { body: response });
           if (verified.error) throw verified.error;
