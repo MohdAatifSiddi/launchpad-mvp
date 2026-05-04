@@ -334,7 +334,7 @@ const Step = ({ n, title, body }: { n: number; title: string; body: string }) =>
 const PriceCard = ({ name, price, period, features, highlight }: { name: string; price: string; period: string; features: string[]; highlight: boolean }) => (
   <div className={`liquid-glass relative rounded-2xl p-8 ${highlight ? "ring-1 ring-foreground/30" : ""}`}>
     {highlight && (
-      <span className="absolute -top-3 left-7 rounded-full bg-foreground px-3 py-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-background">
+      <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-foreground px-4 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-background shadow-md">
         Most popular
       </span>
     )}
