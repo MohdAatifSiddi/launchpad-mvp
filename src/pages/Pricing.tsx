@@ -104,7 +104,7 @@ const loadRazorpay = () => new Promise<void>((resolve, reject) => {
 
 const Plan = ({ name, price, period, features, cta, highlight, loading, onClick }: any) => (
   <div className={`relative rounded-xl border p-7 ${highlight ? "border-accent/50 shadow-glow bg-card" : "border-border bg-card"}`}>
-    {highlight && <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-accent px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-wider text-accent-foreground shadow-md">Most popular</span>}
+    {highlight && <span className="absolute -top-3 left-7 rounded-full bg-accent px-3 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wider text-accent-foreground">Most popular</span>}
     <h3 className="font-serif text-xl font-semibold text-primary">{name}</h3>
     <div className="mt-3 flex items-baseline gap-1">
       <span className="font-serif text-4xl font-semibold text-primary">₹{price}</span>

@@ -9,68 +9,68 @@
 
 @layer base {
   :root {
-    /* Cinematic deep navy surfaces (Velorah-style) — global */
-    --background: 201 100% 13%;
-    --foreground: 0 0% 100%;
+    /* Surfaces — ivory base */
+    --background: 40 33% 97%;
+    --foreground: 222 47% 11%;
 
-    --card: 201 80% 9%;
-    --card-foreground: 0 0% 100%;
+    --card: 40 30% 99%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 201 80% 9%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 40 33% 99%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Primary — ivory on navy */
-    --primary: 0 0% 100%;
-    --primary-foreground: 201 100% 13%;
-    --primary-glow: 0 0% 90%;
+    /* Primary — deep navy (authority) */
+    --primary: 222 60% 16%;
+    --primary-foreground: 40 33% 97%;
+    --primary-glow: 222 55% 28%;
 
-    /* Secondary — translucent navy */
-    --secondary: 201 60% 16%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary — warm parchment */
+    --secondary: 38 28% 92%;
+    --secondary-foreground: 222 47% 14%;
 
-    --muted: 201 50% 16%;
-    --muted-foreground: 240 4% 66%;
+    --muted: 38 22% 90%;
+    --muted-foreground: 222 18% 38%;
 
-    /* Accent — saffron retained for highlights & wordmark */
-    --accent: 38 88% 56%;
-    --accent-foreground: 201 100% 10%;
-    --accent-soft: 201 60% 18%;
+    /* Accent — saffron / gold (single accent) */
+    --accent: 38 88% 48%;
+    --accent-foreground: 222 60% 12%;
+    --accent-soft: 38 80% 92%;
 
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 70% 42%;
+    --destructive-foreground: 40 33% 97%;
 
-    --success: 145 55% 45%;
-    --success-foreground: 0 0% 100%;
+    --success: 145 55% 32%;
+    --success-foreground: 40 33% 97%;
 
-    --warning: 32 88% 55%;
-    --warning-foreground: 201 100% 10%;
+    --warning: 32 88% 45%;
+    --warning-foreground: 222 60% 12%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 38 88% 56%;
+    --border: 38 18% 84%;
+    --input: 38 18% 86%;
+    --ring: 222 60% 16%;
 
     --radius: 0.5rem;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(180deg, hsl(201 100% 13%) 0%, hsl(201 80% 9%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(201 100% 13%) 0%, hsl(201 80% 9%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(38 88% 56%) 0%, hsl(32 88% 60%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(40 33% 97%) 0%, hsl(38 28% 94%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(222 60% 16%) 0%, hsl(222 55% 28%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(38 88% 48%) 0%, hsl(32 88% 52%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
-    --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.35);
-    --shadow-lg: 0 16px 40px -12px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 0 1px hsl(38 88% 56% / 0.3), 0 8px 24px -8px hsl(38 88% 56% / 0.4);
+    /* Shadows — soft, premium */
+    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.04);
+    --shadow-md: 0 4px 12px -2px hsl(222 47% 11% / 0.08);
+    --shadow-lg: 0 16px 40px -12px hsl(222 47% 11% / 0.16);
+    --shadow-glow: 0 0 0 1px hsl(38 88% 48% / 0.2), 0 8px 24px -8px hsl(38 88% 48% / 0.3);
 
-    /* Sidebar — same navy family */
-    --sidebar-background: 201 90% 8%;
-    --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 38 88% 56%;
-    --sidebar-primary-foreground: 201 100% 10%;
-    --sidebar-accent: 201 70% 14%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 201 50% 18%;
-    --sidebar-ring: 38 88% 56%;
+    /* Sidebar */
+    --sidebar-background: 222 60% 14%;
+    --sidebar-foreground: 40 33% 92%;
+    --sidebar-primary: 38 88% 48%;
+    --sidebar-primary-foreground: 222 60% 12%;
+    --sidebar-accent: 222 50% 20%;
+    --sidebar-accent-foreground: 40 33% 96%;
+    --sidebar-border: 222 40% 22%;
+    --sidebar-ring: 38 88% 48%;
   }
 
   .dark {
@@ -132,11 +132,11 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
   h1, h2, h3, h4, h5 {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-weight: 400;
+    font-family: 'Fraunces', Georgia, serif;
+    font-feature-settings: "ss01";
     letter-spacing: -0.01em;
   }
-  .font-serif { font-family: 'Instrument Serif', Georgia, serif; }
+  .font-serif { font-family: 'Fraunces', Georgia, serif; }
   .font-mono  { font-family: 'JetBrains Mono', ui-monospace, monospace; }
   .font-deva  { font-family: 'Noto Sans Devanagari', serif; }
 }
