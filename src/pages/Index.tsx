@@ -1,23 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpenCheck, FileText, ShieldCheck, ScrollText, Lock, Gavel, Check, Quote } from "lucide-react";
 
-const themeStyle: React.CSSProperties & Record<string, string> = {
-  ["--background"]: "201 100% 13%",
-  ["--foreground"]: "0 0% 100%",
-  ["--muted-foreground"]: "240 4% 66%",
-  ["--primary"]: "0 0% 100%",
-  ["--primary-foreground"]: "0 0% 4%",
-  ["--secondary"]: "0 0% 10%",
-  ["--muted"]: "0 0% 10%",
-  ["--accent"]: "0 0% 100%",
-  ["--accent-foreground"]: "0 0% 4%",
-  ["--card"]: "201 80% 9%",
-  ["--card-foreground"]: "0 0% 100%",
-  ["--border"]: "0 0% 18%",
-  ["--input"]: "0 0% 18%",
-  fontFamily: "'Inter', sans-serif",
-};
-
 const serif = { fontFamily: "'Instrument Serif', serif" };
 
 const VIDEO_SRC =
@@ -25,7 +8,7 @@ const VIDEO_SRC =
 
 const Index = () => {
   return (
-    <div style={themeStyle} className="min-h-screen w-full bg-background text-foreground">
+    <div className="min-h-screen w-full bg-background text-foreground">
       {/* ===== HERO with fullscreen video ===== */}
       <div className="relative min-h-screen w-full overflow-hidden">
         <video
