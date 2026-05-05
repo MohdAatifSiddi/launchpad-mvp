@@ -117,13 +117,13 @@ const Auth = () => {
       </div>
 
       <div className="relative hidden bg-gradient-primary p-12 lg:flex lg:flex-col lg:justify-end">
-        <div className="absolute inset-0 opacity-15" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, hsl(var(--accent)) 0, transparent 50%)" }} />
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, hsl(var(--accent)) 0, transparent 50%)" }} />
         <div className="relative">
           <p className="font-mono text-xs uppercase tracking-widest text-accent">A note from our founders</p>
           <blockquote className="mt-4 max-w-md font-serif text-2xl leading-snug text-primary-foreground">
             "Lawyers shouldn't compete with technology. They should be amplified by it. Weybre AI is the co-counsel we wished we had at 11 PM on a Friday."
           </blockquote>
-          <p className="mt-4 text-sm text-primary-foreground/70">— The Weybre AI team, Bengaluru</p>
+          <p className="mt-4 text-sm text-primary-foreground/80">— The Weybre AI team, Bengaluru</p>
         </div>
       </div>
     </div>
