@@ -46,11 +46,11 @@ const pages = {
     title: "Cancellation & Refund Policy",
     intro: "This policy explains subscription cancellation, failed payments, and refund handling for Weybre AI plans.",
     sections: [
-      { h: "Cancellation", p: "You can cancel from Settings. Cancellation is scheduled through Razorpay and access may continue until the end of the current billing period unless otherwise stated." },
+      { h: "Cancellation", p: "You can cancel from Settings. Cancellation is scheduled through Dodo Payments and access may continue until the end of the current billing period unless otherwise stated." },
       { h: "Refunds", p: "Subscription fees are generally non-refundable once a billing period begins, except where required by law or where we determine there was duplicate billing, payment error, or service failure attributable to us." },
       { h: "Failed payments", p: "If payment fails, access may be marked past due and limited until a successful payment is completed." },
       { h: "Plan changes", p: "Plan upgrades or downgrades may apply from the current or next billing cycle depending on billing provider behavior and product configuration." },
-      { h: "How to request help", p: "For billing issues, contact support with your account email, payment date, amount, and Razorpay payment reference if available." },
+      { h: "How to request help", p: "For billing issues, contact support with your account email, payment date, amount, and Dodo Payments payment reference if available." },
     ],
   },
   disclaimer: {
@@ -68,7 +68,7 @@ const pages = {
     intro: "For product, billing, privacy, or grievance requests, contact the Weybre AI team using the details below.",
     sections: [
       { h: "Email", p: "support@weybre.ai" },
-      { h: "Billing support", p: "Include your account email, plan, payment date, amount, and Razorpay payment reference where available." },
+      { h: "Billing support", p: "Include your account email, plan, payment date, amount, and Dodo Payments payment reference where available." },
       { h: "Privacy or deletion requests", p: "Use the in-app delete option where available, or contact support with sufficient account verification details." },
       { h: "Registered office", p: "Weybre AI, Bengaluru, Karnataka, India. Replace this placeholder with your final legal entity and registered address before launch." },
     ],
