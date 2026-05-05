@@ -57,9 +57,9 @@ const Settings = () => {
 
   const cancelPlan = async () => {
     setCancelling(true);
-    const { error } = await supabase.functions.invoke("cancel-razorpay-subscription");
+    const { error } = await supabase.functions.invoke("cancel-dodo-subscription");
     setCancelling(false);
-    if (error) toast.error(error.message); else toast.success("Cancellation requested", { description: "Your plan will stop through Razorpay." });
+    if (error) toast.error(error.message); else toast.success("Cancellation requested", { description: "Your plan will stop through Dodo Payments." });
   };
 
   if (loading) return <AppShell title="Settings"><div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div></AppShell>;

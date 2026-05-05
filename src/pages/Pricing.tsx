@@ -7,12 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 
-declare global {
-  interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
-
 const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,30 +16,14 @@ const Pricing = () => {
     if (!user) { navigate("/auth?mode=signup"); return; }
     setLoading(plan);
     try {
-      await loadRazorpay();
-      const { data, error } = await supabase.functions.invoke("create-razorpay-subscription", { body: { plan } });
-      if (error) throw error;
-      if (!window.Razorpay) throw new Error("Razorpay checkout did not load");
-
-      const checkout = new window.Razorpay({
-        key: data.key_id,
-        name: data.name,
-        description: data.description,
-        subscription_id: data.subscription_id,
-        currency: data.currency,
-        amount: data.amount,
-        prefill: data.prefill,
-        handler: async (response: any) => {
-          const verified = await supabase.functions.invoke("verify-razorpay-payment", { body: response });
-          if (verified.error) throw verified.error;
-          toast.success("Payment verified", { description: "Your Weybre AI workspace is active." });
-          navigate("/app");
-        },
-        modal: { ondismiss: () => setLoading(null) },
+      const { data, error } = await supabase.functions.invoke("create-dodo-checkout", {
+        body: { plan, origin: window.location.origin },
       });
-      checkout.open();
+      if (error) throw error;
+      if (!data?.checkout_url) throw new Error("Dodo Payments did not return a checkout URL");
+      window.location.href = data.checkout_url;
     } catch (err: any) {
-      toast.error(err?.message ?? "Unable to start Razorpay checkout");
+      toast.error(err?.message ?? "Unable to start checkout");
       setLoading(null);
     }
   };
@@ -59,7 +37,7 @@ const Pricing = () => {
           Start your 7-day paid trial
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
-          Secure subscription checkout via Razorpay. Cancel anytime in Settings.
+          Secure subscription checkout via Dodo Payments. Cancel anytime in Settings.
         </p>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2">
@@ -91,16 +69,6 @@ const Pricing = () => {
     </div>
   );
 };
-
-const loadRazorpay = () => new Promise<void>((resolve, reject) => {
-  if (window.Razorpay) { resolve(); return; }
-  const script = document.createElement("script");
-  script.src = "https://checkout.razorpay.com/v1/checkout.js";
-  script.async = true;
-  script.onload = () => resolve();
-  script.onerror = () => reject(new Error("Could not load Razorpay checkout"));
-  document.body.appendChild(script);
-});
 
 const Plan = ({ name, price, period, features, cta, highlight, loading, onClick }: any) => (
   <div className={`relative rounded-xl border p-7 ${highlight ? "border-accent/50 shadow-glow bg-card" : "border-border bg-card"}`}>

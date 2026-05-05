@@ -260,7 +260,7 @@ const Index = () => {
             Win back your <em className="not-italic text-muted-foreground">evenings.</em>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Subscribe securely with Razorpay. No call, no demo. Open the app and start researching.
+            Subscribe securely with Dodo Payments. No call, no demo. Open the app and start researching.
           </p>
           <Link
             to="/auth?mode=signup"
