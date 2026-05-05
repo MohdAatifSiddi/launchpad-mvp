@@ -28,8 +28,8 @@
     --secondary: 38 28% 92%;
     --secondary-foreground: 222 47% 14%;
 
-    --muted: 38 22% 90%;
-    --muted-foreground: 222 18% 38%;
+    --muted: 38 22% 92%;
+    --muted-foreground: 222 22% 28%;
 
     /* Accent — saffron / gold (single accent) */
     --accent: 38 88% 48%;
@@ -91,7 +91,7 @@
     --secondary-foreground: 40 30% 94%;
 
     --muted: 222 30% 16%;
-    --muted-foreground: 38 14% 65%;
+    --muted-foreground: 38 18% 78%;
 
     --accent: 38 88% 56%;
     --accent-foreground: 222 60% 10%;
@@ -187,3 +187,25 @@
 .animate-fade-rise { animation: fade-rise 0.8s ease-out both; }
 .animate-fade-rise-delay { animation: fade-rise 0.8s ease-out 0.2s both; }
 .animate-fade-rise-delay-2 { animation: fade-rise 0.8s ease-out 0.4s both; }
+
+/* Perplexity-inspired surfaces — search-first, citation-forward */
+@layer components {
+  .px-ask {
+    @apply rounded-3xl border border-border bg-card shadow-md transition-shadow;
+    box-shadow: 0 1px 2px hsl(222 47% 11% / 0.04), 0 8px 32px -12px hsl(222 47% 11% / 0.10);
+  }
+  .px-ask:focus-within {
+    @apply border-accent/50;
+    box-shadow: 0 0 0 4px hsl(var(--accent) / 0.10), 0 12px 36px -12px hsl(222 47% 11% / 0.18);
+  }
+  .px-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground/80 transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-foreground;
+  }
+  .px-section-label {
+    @apply inline-flex items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground;
+  }
+  .px-divider { @apply h-px w-full bg-border/70; }
+}
+
+.prose-px { max-width: 42rem; }
+.prose-px p { @apply mb-4 leading-[1.75] text-foreground; }
