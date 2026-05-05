@@ -194,62 +194,66 @@ const Research = () => {
 
   return (
     <AppShell title="Research">
-      <div className="container max-w-5xl py-8">
+      <div className="container max-w-3xl py-12">
+        {/* Welcome — only when no answer yet */}
+        {!answer && !loading && (
+          <div className="mb-8 text-center">
+            <h2 className="font-serif text-4xl font-semibold tracking-tight text-primary md:text-5xl">
+              What can I help you research?
+            </h2>
+            <p className="mt-3 text-base text-muted-foreground">
+              Cited answers from the Indian Supreme Court corpus and the live web.
+            </p>
+          </div>
+        )}
+
         {/* Mode selector */}
-        <Tabs value={mode} onValueChange={(v) => setMode(v as SearchMode)} className="mb-5">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="case-law" className="gap-2">
+        <Tabs value={mode} onValueChange={(v) => setMode(v as SearchMode)} className="mb-4 flex justify-center">
+          <TabsList className="grid w-full max-w-xs grid-cols-2 rounded-full bg-secondary p-1">
+            <TabsTrigger value="case-law" className="gap-2 rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
               <Scale className="h-3.5 w-3.5" /> Case law
             </TabsTrigger>
-            <TabsTrigger value="web" className="gap-2">
-              <Globe className="h-3.5 w-3.5" /> Web search
+            <TabsTrigger value="web" className="gap-2 rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <Globe className="h-3.5 w-3.5" /> Web
             </TabsTrigger>
           </TabsList>
         </Tabs>
 
-        {/* Ask box */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div className="mb-2 flex items-center gap-2">
-            {mode === "web" ? (
-              <Globe className="h-4 w-4 text-accent" />
-            ) : (
-              <Sparkles className="h-4 w-4 text-accent" />
-            )}
-            <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-              {mode === "web"
-                ? "AI web search · Cited live sources"
-                : "Ask in plain English or Hindi · Indian SC corpus"}
-            </span>
-          </div>
+        {/* Ask box — Perplexity-style rounded surface */}
+        <div className="px-ask p-5">
           <Textarea
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="min-h-[100px] resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
+            className="min-h-[88px] resize-none border-0 bg-transparent p-0 text-base shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
             onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAsk(); }}
           />
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">⌘ + Enter to ask</span>
-            <Button onClick={() => handleAsk()} disabled={loading || !query.trim()} className="bg-primary hover:bg-primary-glow">
+            <span className="px-section-label">
+              {mode === "web" ? <Globe className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+              {mode === "web" ? "AI web search · cited live sources" : "Indian SC corpus · cited"}
+            </span>
+            <Button
+              onClick={() => handleAsk()}
+              disabled={loading || !query.trim()}
+              size="sm"
+              className="rounded-full bg-primary px-4 hover:bg-primary-glow"
+            >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-              {mode === "web" ? "Search the web" : "Ask"}
+              {mode === "web" ? "Search" : "Ask"}
             </Button>
           </div>
         </div>
 
-        {/* Sample queries */}
+        {/* Sample queries — pill chips */}
         {!answer && !loading && (
-          <div className="mt-6">
-            <p className="mb-3 font-mono text-[0.7rem] uppercase tracking-wider text-muted-foreground">
+          <div className="mt-8">
+            <p className="px-section-label mb-3 justify-center w-full text-center">
               Try a sample {mode === "web" ? "web search" : "case-law query"}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap justify-center gap-2">
               {samples.map(s => (
-                <button
-                  key={s}
-                  onClick={() => handleAsk(s)}
-                  className="rounded-full border border-border bg-card px-3 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-accent/50 hover:text-foreground"
-                >
+                <button key={s} onClick={() => handleAsk(s)} className="px-pill">
                   {s}
                 </button>
               ))}
@@ -259,11 +263,11 @@ const Research = () => {
 
         {/* Reasoning state — animated, multi-step */}
         {loading && (
-          <div className="mt-8 rounded-xl border border-border bg-card p-5">
+          <div className="mt-8 rounded-2xl border border-border bg-card p-5">
             <div className="mb-3 flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
-              <span className="font-mono text-xs uppercase tracking-wider text-primary">
-                {mode === "web" ? "Doing web research…" : "Doing case-law research…"}
+              <span className="px-section-label">
+                {mode === "web" ? "Searching the web…" : "Searching case law…"}
               </span>
             </div>
             <ol className="space-y-2 pl-1">
@@ -271,26 +275,11 @@ const Research = () => {
                 const done = i < progressStep;
                 const active = i === progressStep;
                 return (
-                  <li
-                    key={step}
-                    className={`flex items-center gap-2.5 text-sm transition-opacity ${
-                      done || active ? "opacity-100" : "opacity-40"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-semibold ${
-                        done
-                          ? "border-accent bg-accent text-accent-foreground"
-                          : active
-                          ? "border-accent text-accent"
-                          : "border-border text-muted-foreground"
-                      }`}
-                    >
+                  <li key={step} className={`flex items-center gap-2.5 text-sm transition-opacity ${done || active ? "opacity-100" : "opacity-40"}`}>
+                    <span className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-semibold ${done ? "border-accent bg-accent text-accent-foreground" : active ? "border-accent text-accent" : "border-border text-muted-foreground"}`}>
                       {done ? "✓" : i + 1}
                     </span>
-                    <span className={done || active ? "text-foreground" : "text-muted-foreground"}>
-                      {step}
-                    </span>
+                    <span className={done || active ? "text-foreground" : "text-muted-foreground"}>{step}</span>
                   </li>
                 );
               })}
@@ -300,44 +289,74 @@ const Research = () => {
 
         {/* Answer */}
         {answer && !loading && (
-          <div ref={answerRef} className="mt-8 animate-fade-in">
-            <div className="mb-4 flex items-center justify-between">
+          <div ref={answerRef} className="mt-10 animate-fade-in">
+            {/* Query echo */}
+            <h3 className="mb-6 font-serif text-2xl font-semibold leading-snug text-primary">{query}</h3>
+
+            {/* Sources strip — progressive disclosure */}
+            {((resultMode === "case-law" && citations.length > 0) || (resultMode === "web" && webSources.length > 0)) && (
+              <div className="mb-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-accent" />
+                  <span className="px-section-label">Sources</span>
+                  <span className="text-xs text-muted-foreground">
+                    · {resultMode === "case-law" ? citations.length : webSources.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {(resultMode === "case-law" ? citations : webSources).slice(0, 4).map((s: any, i) => (
+                    <button
+                      key={i}
+                      onClick={() => document.getElementById(`cite-${i}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                      className="rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-accent/40 hover:shadow-sm"
+                    >
+                      <div className="mb-1 flex items-center gap-1 font-mono text-[0.65rem] text-muted-foreground">
+                        <span className="rounded bg-accent-soft px-1 text-accent-foreground">[{i + 1}]</span>
+                        <span className="truncate">{resultMode === "web" ? s.domain : s.neutral_citation || "Judgment"}</span>
+                      </div>
+                      <p className="line-clamp-2 text-xs font-medium text-foreground">{s.title}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Answer */}
+            <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AiDisclaimer />
-                <span className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-1 text-xs text-muted-foreground">
-                  {resultMode === "web" ? <Globe className="h-3 w-3" /> : <Scale className="h-3 w-3" />}
-                  {resultMode === "web" ? "Web search" : "Case law"}
+                <Sparkles className="h-4 w-4 text-accent" />
+                <span className="px-section-label">Answer</span>
+                <span className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-[0.65rem] text-muted-foreground">
+                  {resultMode === "web" ? <Globe className="h-2.5 w-2.5" /> : <Scale className="h-2.5 w-2.5" />}
+                  {resultMode === "web" ? "Web" : "Case law"}
                 </span>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setShowSave(true)}>
-                  <Save className="h-4 w-4" /> Save to matter
-                </Button>
-              </div>
+              <Button size="sm" variant="ghost" onClick={() => setShowSave(true)}>
+                <Save className="h-4 w-4" /> Save
+              </Button>
             </div>
 
-            <article className="rounded-xl border border-border bg-card p-7">
-              <div className="prose prose-slate max-w-none font-serif text-[1.02rem] leading-[1.75] text-foreground">
-                {answer.split("\n\n").map((para, i) => (
-                  <p key={i} className="mb-4 last:mb-0">{renderAnswer(para)}</p>
-                ))}
-              </div>
+            <article className="prose-px font-serif text-[1.05rem] leading-[1.75] text-foreground">
+              {answer.split("\n\n").map((para, i) => (
+                <p key={i} className="mb-4 last:mb-0">{renderAnswer(para)}</p>
+              ))}
             </article>
 
-            {/* Case-law citations */}
+            <div className="my-6"><AiDisclaimer /></div>
+
+            {/* Detailed citations */}
             {resultMode === "case-law" && citations.length > 0 && (
               <div className="mt-8">
-                <h3 className="mb-4 flex items-center gap-2 font-serif text-lg font-semibold text-primary">
-                  <BookOpen className="h-4 w-4 text-accent" /> Cited judgments
-                </h3>
+                <div className="mb-4 flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-accent" />
+                  <span className="px-section-label">Cited judgments</span>
+                </div>
                 <div className="space-y-3">
                   {citations.map((c, i) => (
-                    <div key={c.id} id={`cite-${i}`} className="rounded-lg border border-border bg-card p-5">
+                    <div key={c.id} id={`cite-${i}`} className="rounded-xl border border-border bg-card p-5">
                       <div className="mb-1 flex items-start justify-between gap-3">
                         <h4 className="font-serif text-base font-semibold text-primary">[{i + 1}] {c.title}</h4>
-                        {c.similarity != null && (
-                          <span className="font-mono text-[0.7rem] text-muted-foreground">{(c.similarity * 100).toFixed(0)}% match</span>
-                        )}
+                        {c.similarity != null && <span className="font-mono text-[0.7rem] text-muted-foreground">{(c.similarity * 100).toFixed(0)}% match</span>}
                       </div>
                       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.7rem] text-muted-foreground">
                         {c.neutral_citation && <span>{c.neutral_citation}</span>}
@@ -352,26 +371,17 @@ const Research = () => {
               </div>
             )}
 
-            {/* Web sources */}
             {resultMode === "web" && webSources.length > 0 && (
               <div className="mt-8">
-                <h3 className="mb-4 flex items-center gap-2 font-serif text-lg font-semibold text-primary">
-                  <Globe className="h-4 w-4 text-accent" /> Web sources
-                </h3>
+                <div className="mb-4 flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-accent" />
+                  <span className="px-section-label">Web sources</span>
+                </div>
                 <div className="space-y-3">
                   {webSources.map((s, i) => (
-                    <a
-                      key={`${s.url}-${i}`}
-                      id={`cite-${i}`}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group block rounded-lg border border-border bg-card p-5 transition-colors hover:border-accent/40"
-                    >
+                    <a key={`${s.url}-${i}`} id={`cite-${i}`} href={s.url} target="_blank" rel="noopener noreferrer" className="group block rounded-xl border border-border bg-card p-5 transition-colors hover:border-accent/40">
                       <div className="mb-1 flex items-start justify-between gap-3">
-                        <h4 className="font-serif text-base font-semibold text-primary group-hover:text-accent">
-                          [{i + 1}] {s.title}
-                        </h4>
+                        <h4 className="font-serif text-base font-semibold text-primary group-hover:text-accent">[{i + 1}] {s.title}</h4>
                         <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </div>
                       <div className="mb-2 font-mono text-[0.7rem] text-muted-foreground">{s.domain}</div>
@@ -383,8 +393,8 @@ const Research = () => {
             )}
 
             {resultMode === "web" && webSources.length === 0 && (
-              <div className="mt-6 rounded-lg border border-dashed border-border bg-card p-4 text-xs text-muted-foreground">
-                <Search className="mb-1 inline h-3.5 w-3.5" /> No structured sources returned. The answer above is grounded in live web search; verify before relying on it.
+              <div className="mt-6 rounded-xl border border-dashed border-border bg-card p-4 text-xs text-muted-foreground">
+                <Search className="mb-1 inline h-3.5 w-3.5" /> No structured sources returned. Verify the answer above before relying on it.
               </div>
             )}
           </div>
