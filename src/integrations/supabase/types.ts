@@ -374,6 +374,10 @@ export type Database = {
           checkout_status: string
           created_at: string
           current_period_end: string | null
+          dodo_checkout_session_id: string | null
+          dodo_customer_id: string | null
+          dodo_payment_id: string | null
+          dodo_subscription_id: string | null
           id: string
           last_payment_at: string | null
           plan: Database["public"]["Enums"]["plan_tier"]
@@ -391,6 +395,10 @@ export type Database = {
           checkout_status?: string
           created_at?: string
           current_period_end?: string | null
+          dodo_checkout_session_id?: string | null
+          dodo_customer_id?: string | null
+          dodo_payment_id?: string | null
+          dodo_subscription_id?: string | null
           id?: string
           last_payment_at?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
@@ -408,6 +416,10 @@ export type Database = {
           checkout_status?: string
           created_at?: string
           current_period_end?: string | null
+          dodo_checkout_session_id?: string | null
+          dodo_customer_id?: string | null
+          dodo_payment_id?: string | null
+          dodo_subscription_id?: string | null
           id?: string
           last_payment_at?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
