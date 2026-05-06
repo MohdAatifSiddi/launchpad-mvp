@@ -56,6 +56,22 @@ export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?
               {item.label}
             </NavLink>
           ))}
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                cn(
+                  "mt-4 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors border-t border-sidebar-border pt-4",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-primary"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                )
+              }
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Admin
+            </NavLink>
+          )}
         </nav>
 
         <div className="border-t border-sidebar-border p-4">
