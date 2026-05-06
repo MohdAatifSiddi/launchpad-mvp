@@ -1,9 +1,10 @@
 import { forwardRef, ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck } from "lucide-react";
+import { FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck, LayoutDashboard } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
@@ -18,6 +19,7 @@ const NAV = [
 export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?: string; action?: ReactNode }>(({ children, title, action }, ref) => {
   const { user, signOut } = useAuth();
   const { sub, loading, isActive } = useSubscription();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -54,6 +56,22 @@ export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?
               {item.label}
             </NavLink>
           ))}
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                cn(
+                  "mt-4 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors border-t border-sidebar-border pt-4",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-primary"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                )
+              }
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Admin
+            </NavLink>
+          )}
         </nav>
 
         <div className="border-t border-sidebar-border p-4">

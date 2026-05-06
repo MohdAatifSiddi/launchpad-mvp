@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import DodoPayments from "https://esm.sh/dodopayments@2.4.1";
+import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,8 +8,18 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const DODO_API_KEY = Deno.env.get("DODO_PAYMENTS_API_KEY")!;
 const DODO_WEBHOOK_KEY = Deno.env.get("DODO_PAYMENTS_WEBHOOK_KEY")!;
+
+async function verifyStandardWebhook(secret: string, id: string, timestamp: string, body: string, signatureHeader: string) {
+  // Dodo / standard-webhooks: secret is "whsec_<base64>"; signature header is "v1,<base64sig> v1,<base64sig>"
+  const secretB64 = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+  const keyBytes = Uint8Array.from(atob(secretB64), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const data = new TextEncoder().encode(`${id}.${timestamp}.${body}`);
+  const sigBuf = await crypto.subtle.sign("HMAC", key, data);
+  const expected = encodeBase64(new Uint8Array(sigBuf));
+  return signatureHeader.split(" ").some((p) => p.split(",")[1] === expected);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -17,19 +27,13 @@ Deno.serve(async (req) => {
     if (!DODO_WEBHOOK_KEY) return json({ error: "Webhook key not configured" }, 500);
 
     const raw = await req.text();
-    const headers = {
-      "webhook-id": req.headers.get("webhook-id") ?? "",
-      "webhook-signature": req.headers.get("webhook-signature") ?? "",
-      "webhook-timestamp": req.headers.get("webhook-timestamp") ?? "",
-    };
+    const id = req.headers.get("webhook-id") ?? "";
+    const ts = req.headers.get("webhook-timestamp") ?? "";
+    const sig = req.headers.get("webhook-signature") ?? "";
 
-    const dodo = new DodoPayments({ bearerToken: DODO_API_KEY, webhookKey: DODO_WEBHOOK_KEY });
-    try {
-      await dodo.webhooks.unwrap(raw, { headers });
-    } catch (e) {
-      console.error("dodo signature failed", e);
-      return json({ error: "Invalid webhook signature" }, 401);
-    }
+    if (!id || !ts || !sig) return json({ error: "Missing webhook headers" }, 400);
+    const ok = await verifyStandardWebhook(DODO_WEBHOOK_KEY, id, ts, raw, sig);
+    if (!ok) return json({ error: "Invalid webhook signature" }, 401);
 
     const event = JSON.parse(raw);
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
@@ -41,7 +45,6 @@ Deno.serve(async (req) => {
     const userIdFromMeta: string | undefined = metadata.user_id;
     const planFromMeta: "solo" | "firm" | undefined = metadata.plan;
 
-    // Find subscription row: by dodo_subscription_id, then by checkout session, then by user_id from metadata
     let subRow: { id: string; user_id: string } | null = null;
     if (subId) {
       const r = await admin.from("subscriptions").select("id, user_id").eq("dodo_subscription_id", subId).maybeSingle();
@@ -52,7 +55,9 @@ Deno.serve(async (req) => {
       if (r.data) subRow = r.data;
     }
 
-    const updates: Record<string, unknown> = { dodo_subscription_id: subId, dodo_customer_id: customerId };
+    const updates: Record<string, unknown> = {};
+    if (subId) updates.dodo_subscription_id = subId;
+    if (customerId) updates.dodo_customer_id = customerId;
     if (planFromMeta) updates.plan = planFromMeta;
 
     switch (eventType) {
@@ -85,7 +90,7 @@ Deno.serve(async (req) => {
       await admin.from("subscriptions").upsert({
         user_id: userIdFromMeta,
         plan: planFromMeta ?? "solo",
-        status: updates.status ?? "incomplete",
+        status: (updates.status as any) ?? "incomplete",
         ...updates,
       }, { onConflict: "user_id" });
     }
@@ -95,7 +100,7 @@ Deno.serve(async (req) => {
       subscription_id: subRow?.id ?? null,
       provider: "dodo",
       event_type: eventType || "webhook",
-      provider_event_id: req.headers.get("webhook-id") ?? subId ?? null,
+      provider_event_id: id || subId || null,
       amount: data.recurring_pre_tax_amount ?? data.total_amount ?? null,
       currency: data.currency ?? "INR",
       status: data.status ?? "received",
