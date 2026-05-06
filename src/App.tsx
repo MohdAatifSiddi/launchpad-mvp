@@ -46,6 +46,10 @@ const App = () => (
             <Route path="/app/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
             <Route path="/app/drafts/:id" element={<ProtectedRoute><DraftEditor /></ProtectedRoute>} />
             <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminOverview /></AdminRoute></ProtectedRoute>} />
+            <Route path="/admin/customers" element={<ProtectedRoute><AdminRoute><AdminCustomers /></AdminRoute></ProtectedRoute>} />
+            <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminRoute><AdminSubscriptions /></AdminRoute></ProtectedRoute>} />
+            <Route path="/admin/payments" element={<ProtectedRoute><AdminRoute><AdminPayments /></AdminRoute></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
