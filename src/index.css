@@ -9,68 +9,68 @@
 
 @layer base {
   :root {
-    /* Surfaces — ivory base */
-    --background: 40 33% 97%;
-    --foreground: 222 47% 11%;
+    /* Surfaces — pure white base, soft layering */
+    --background: 0 0% 100%;
+    --foreground: 222 20% 14%;          /* deep charcoal, not black */
 
-    --card: 40 30% 99%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 14%;
 
-    --popover: 40 33% 99%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 20% 14%;
 
-    /* Primary — deep navy (authority) */
-    --primary: 222 60% 16%;
-    --primary-foreground: 40 33% 97%;
-    --primary-glow: 222 55% 28%;
+    /* Primary — deep charcoal for high readability */
+    --primary: 222 22% 16%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 222 18% 28%;
 
-    /* Secondary — warm parchment */
-    --secondary: 38 28% 92%;
-    --secondary-foreground: 222 47% 14%;
+    /* Secondary — very light gray for layered surfaces */
+    --secondary: 220 16% 97%;
+    --secondary-foreground: 222 20% 14%;
 
-    --muted: 38 22% 92%;
-    --muted-foreground: 222 22% 28%;
+    --muted: 220 16% 96%;
+    --muted-foreground: 222 12% 42%;     /* cool gray w/ blue undertone, AA on white */
 
-    /* Accent — saffron / gold (single accent) */
-    --accent: 38 88% 48%;
-    --accent-foreground: 222 60% 12%;
-    --accent-soft: 38 80% 92%;
+    /* Accent — soft indigo */
+    --accent: 232 64% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 232 70% 96%;
 
-    --destructive: 0 70% 42%;
-    --destructive-foreground: 40 33% 97%;
+    --destructive: 0 70% 48%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 145 55% 32%;
-    --success-foreground: 40 33% 97%;
+    --success: 160 60% 36%;
+    --success-foreground: 0 0% 100%;
 
-    --warning: 32 88% 45%;
-    --warning-foreground: 222 60% 12%;
+    --warning: 32 84% 46%;
+    --warning-foreground: 0 0% 100%;
 
-    --border: 38 18% 84%;
-    --input: 38 18% 86%;
-    --ring: 222 60% 16%;
+    --border: 220 14% 92%;
+    --input: 220 14% 92%;
+    --ring: 232 64% 56%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(180deg, hsl(40 33% 97%) 0%, hsl(38 28% 94%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(222 60% 16%) 0%, hsl(222 55% 28%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(38 88% 48%) 0%, hsl(32 88% 52%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 16% 98%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(232 64% 56%) 0%, hsl(232 60% 64%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(232 64% 56%) 0%, hsl(212 80% 58%) 100%);
 
-    /* Shadows — soft, premium */
-    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.04);
-    --shadow-md: 0 4px 12px -2px hsl(222 47% 11% / 0.08);
-    --shadow-lg: 0 16px 40px -12px hsl(222 47% 11% / 0.16);
-    --shadow-glow: 0 0 0 1px hsl(38 88% 48% / 0.2), 0 8px 24px -8px hsl(38 88% 48% / 0.3);
+    /* Shadows — diffused, premium */
+    --shadow-sm: 0 1px 2px 0 hsl(222 20% 14% / 0.04);
+    --shadow-md: 0 6px 20px -6px hsl(222 20% 14% / 0.08);
+    --shadow-lg: 0 24px 60px -20px hsl(222 20% 14% / 0.14);
+    --shadow-glow: 0 0 0 4px hsl(var(--accent) / 0.10), 0 12px 36px -12px hsl(var(--accent) / 0.25);
 
-    /* Sidebar */
-    --sidebar-background: 222 60% 14%;
-    --sidebar-foreground: 40 33% 92%;
-    --sidebar-primary: 38 88% 48%;
-    --sidebar-primary-foreground: 222 60% 12%;
-    --sidebar-accent: 222 50% 20%;
-    --sidebar-accent-foreground: 40 33% 96%;
-    --sidebar-border: 222 40% 22%;
-    --sidebar-ring: 38 88% 48%;
+    /* Sidebar — light, frosted */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 20% 22%;
+    --sidebar-primary: 232 64% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 16% 96%;
+    --sidebar-accent-foreground: 222 22% 16%;
+    --sidebar-border: 220 14% 92%;
+    --sidebar-ring: 232 64% 56%;
   }
 
   .dark {
