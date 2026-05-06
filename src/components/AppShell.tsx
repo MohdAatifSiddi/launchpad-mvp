@@ -1,9 +1,10 @@
 import { forwardRef, ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck } from "lucide-react";
+import { FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck, LayoutDashboard } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
@@ -18,6 +19,7 @@ const NAV = [
 export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?: string; action?: ReactNode }>(({ children, title, action }, ref) => {
   const { user, signOut } = useAuth();
   const { sub, loading, isActive } = useSubscription();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const location = useLocation();
 
