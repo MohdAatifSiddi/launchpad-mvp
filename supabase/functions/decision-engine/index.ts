@@ -28,16 +28,23 @@ interface IKDoc {
 }
 
 async function ikSearch(query: string, pagenum = 0): Promise<IKDoc[]> {
-  const url = `${IK_BASE}/search/?formInput=${encodeURIComponent(query)}&pagenum=${pagenum}`;
+  const params = new URLSearchParams({ formInput: query, pagenum: String(pagenum) });
+  const url = `${IK_BASE}/search/?${params.toString()}`;
   const r = await fetch(url, {
     method: "POST",
-    headers: { Authorization: `Token ${IK_TOKEN}` },
+    headers: {
+      Authorization: `Token ${IK_TOKEN}`,
+      Accept: "application/json",
+    },
   });
+  const text = await r.text();
   if (!r.ok) {
-    console.error("IK search error", r.status, await r.text());
+    console.error("IK search error", r.status, text.slice(0, 500));
     return [];
   }
-  const j = await r.json();
+  let j: any;
+  try { j = JSON.parse(text); } catch { console.error("IK non-JSON response", text.slice(0, 300)); return []; }
+  console.log("IK search results:", j.docs?.length ?? 0, "for query:", query);
   return Array.isArray(j.docs) ? j.docs.slice(0, 8) : [];
 }
 
