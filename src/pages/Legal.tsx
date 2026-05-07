@@ -63,6 +63,21 @@ const pages = {
       { h: "No solicitation", p: "The product is not intended to solicit legal work from the public or advertise legal services in violation of Bar Council of India rules." },
     ],
   },
+  security: {
+    title: "Security",
+    intro: "Weybre AI is built with security-first defaults: authenticated workspaces, row-level isolation, encrypted secrets, and DPDP-aligned data residency.",
+    sections: [
+      { h: "Data residency", p: "Customer data is hosted on managed infrastructure in alignment with the Digital Personal Data Protection Act, 2023 (DPDP). Matters, drafts, and queries remain inside your authenticated workspace." },
+      { h: "Encryption", p: "Data is encrypted in transit using TLS 1.2+. Data at rest is encrypted using industry-standard AES-256. Backups are encrypted and access-controlled." },
+      { h: "Access control", p: "Every record is protected by row-level security tied to the authenticated user. Admin operations require an explicit admin role granted in our access table — no client-side role checks." },
+      { h: "Secret management", p: "Provider keys (Indian Kanoon, Dodo Payments, AI gateway) are stored as server-side secrets and only accessed inside trusted backend functions. No private keys are exposed to the browser." },
+      { h: "Authentication", p: "Sign-in is protected by industry-standard email/password flows with optional Google sign-in. Sessions are short-lived and refreshed via secure tokens." },
+      { h: "Auditability", p: "Billing events, usage events, and admin actions are logged server-side. Admins can review payment, subscription, and usage history from the admin dashboard." },
+      { h: "Responsible disclosure", p: "If you discover a vulnerability, email security@weybre.ai with reproduction details. We acknowledge reports within 72 hours and credit responsible reporters in our hall of fame." },
+      { h: "Subprocessors", p: "We use vetted subprocessors for hosting, payments (Dodo Payments), AI inference (Lovable AI Gateway), and legal data (Indian Kanoon). A current list is available on request." },
+      { h: "Your controls", p: "Delete matters, drafts, and notes from Settings at any time. Contact us for a full data export or account erasure under the DPDP Act." },
+    ],
+  },
   contact: {
     title: "Contact & Grievance",
     intro: "For product, billing, privacy, or grievance requests, contact the Weybre AI team using the details below.",

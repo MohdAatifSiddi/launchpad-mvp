@@ -12,6 +12,7 @@ import Onboarding from "./pages/Onboarding.tsx";
 import Pricing from "./pages/Pricing.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Research from "./pages/Research.tsx";
+import Decide from "./pages/Decide.tsx";
 import Matters from "./pages/Matters.tsx";
 import MatterDetail from "./pages/MatterDetail.tsx";
 import Drafts from "./pages/Drafts.tsx";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/app/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
+            <Route path="/app/decide" element={<ProtectedRoute><Decide /></ProtectedRoute>} />
             <Route path="/app/matters" element={<ProtectedRoute><Matters /></ProtectedRoute>} />
             <Route path="/app/matters/:id" element={<ProtectedRoute><MatterDetail /></ProtectedRoute>} />
             <Route path="/app/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />

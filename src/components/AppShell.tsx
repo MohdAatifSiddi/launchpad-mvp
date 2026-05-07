@@ -1,6 +1,6 @@
 import { forwardRef, ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck, LayoutDashboard } from "lucide-react";
+import { FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck, LayoutDashboard, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -11,6 +11,7 @@ import { useEffect } from "react";
 
 const NAV = [
   { to: "/app/research", label: "Research", icon: Search },
+  { to: "/app/decide",   label: "Decision Engine", icon: Sparkles },
   { to: "/app/matters",  label: "Matters",  icon: FolderOpen },
   { to: "/app/drafts",   label: "Drafts",   icon: FileText },
   { to: "/app/settings", label: "Settings", icon: SettingsIcon },
