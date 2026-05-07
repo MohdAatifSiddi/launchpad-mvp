@@ -75,7 +75,7 @@ const Index = () => {
               to="/auth?mode=signup"
               className="liquid-glass cursor-pointer rounded-full px-14 py-5 text-base text-foreground hover:scale-[1.03]"
             >
-              Begin Trial — ₹999/mo
+              Begin Free Trial
             </Link>
             <a
               href="#product"
@@ -266,7 +266,7 @@ const Index = () => {
             to="/auth?mode=signup"
             className="liquid-glass mt-10 inline-block cursor-pointer rounded-full px-14 py-5 text-base text-foreground hover:scale-[1.03]"
           >
-            Subscribe — ₹999 / month
+            Start Free Trial
           </Link>
         </div>
       </section>
@@ -286,6 +286,7 @@ const Index = () => {
             <Link to="/legal/about" className="hover:text-foreground">About</Link>
             <Link to="/legal/terms" className="hover:text-foreground">Terms</Link>
             <Link to="/legal/privacy" className="hover:text-foreground">Privacy</Link>
+            <Link to="/legal/security" className="hover:text-foreground">Security</Link>
             <Link to="/legal/refund" className="hover:text-foreground">Refunds</Link>
             <Link to="/legal/disclaimer" className="hover:text-foreground">Disclaimer</Link>
             <Link to="/legal/contact" className="hover:text-foreground">Contact</Link>
