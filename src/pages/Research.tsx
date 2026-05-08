@@ -56,9 +56,9 @@ const WEB_SAMPLES = [
 ];
 
 const PROGRESS_STEPS_CASE = [
-  "Searching Indian Supreme Court corpus…",
-  "Ranking by hybrid semantic + keyword score…",
-  "Synthesising answer with inline citations…",
+  "Searching SC corpus + Indian Kanoon in parallel…",
+  "Ranking precedents by authority, citations, and relevance…",
+  "Extracting principles, key paragraphs, and caveats…",
 ];
 
 const PROGRESS_STEPS_WEB = [
