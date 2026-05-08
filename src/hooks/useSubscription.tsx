@@ -33,6 +33,10 @@ export const useSubscription = () => {
     return () => { active = false; };
   }, [user]);
 
-  const isActive = sub?.status === "active" || sub?.status === "trialing";
+  const inTrial = !!sub?.trial_end && new Date(sub.trial_end).getTime() > Date.now();
+  const isActive =
+    sub?.status === "active" ||
+    sub?.status === "trialing" ||
+    (sub?.status === "incomplete" && inTrial);
   return { sub, loading, isActive };
 };
