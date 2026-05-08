@@ -84,15 +84,15 @@ Deno.serve(async (req) => {
     }
 
     const searchQuery = problem || contractText.slice(0, 200);
-    const docs = await ikSearch(searchQuery);
-    if (docs.length === 0) {
-      return json({ error: "No matching cases found on Indian Kanoon. Try rephrasing." }, 404);
-    }
+    const docs = await ikSearch(searchQuery).catch((e) => {
+      console.error("IK search threw", e);
+      return [] as IKDoc[];
+    });
 
-    // Fetch detailed text for top 4 docs
+    // Fetch detailed text for top 4 IK docs (best-effort)
     const top = docs.slice(0, 4);
     const detailed = await Promise.all(top.map(async (d) => {
-      const full = await ikDoc(d.tid);
+      const full = await ikDoc(d.tid).catch(() => null);
       const text = stripHtml(full?.doc ?? d.headline ?? "").slice(0, 3000);
       return {
         tid: d.tid,
@@ -105,10 +105,37 @@ Deno.serve(async (req) => {
       };
     }));
 
-    const context = detailed.map((c, i) => `[${i + 1}] ${c.title}
+    // Fallback: pull from internal SC judgments corpus when IK returns nothing
+    if (detailed.length === 0) {
+      try {
+        const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: rows } = await admin.rpc("search_judgments", {
+          query_text: searchQuery,
+          query_embedding: new Array(1536).fill(0),
+          match_count: 6,
+        });
+        for (const r of (rows ?? []) as any[]) {
+          detailed.push({
+            tid: 0,
+            title: r.title,
+            source: r.court,
+            date: r.decision_date,
+            cited_by: 0,
+            url: r.id ? `internal://judgments/${r.id}` : "",
+            excerpt: stripHtml(r.headnote || r.summary || "").slice(0, 2500),
+          });
+        }
+      } catch (e) {
+        console.error("internal corpus fallback failed", e);
+      }
+    }
+
+    const context = detailed.length
+      ? detailed.map((c, i) => `[${i + 1}] ${c.title}
 Court/Source: ${c.source ?? "—"} | Date: ${c.date ?? "—"} | Cited by: ${c.cited_by ?? 0}
 URL: ${c.url}
-Excerpt: ${c.excerpt}`).join("\n\n---\n\n");
+Excerpt: ${c.excerpt}`).join("\n\n---\n\n")
+      : "(no precedents retrieved — answer from general Indian legal principles and clearly flag the absence of citations)";
 
     let systemPrompt = "";
     let userPrompt = "";
