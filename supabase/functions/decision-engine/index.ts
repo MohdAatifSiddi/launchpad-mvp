@@ -148,7 +148,9 @@ Excerpt: ${c.excerpt}`).join("\n\n---\n\n")
     let userPrompt = "";
 
     const formatRules = `Write like a senior Indian advocate briefing a colleague — clean prose, minimal scaffolding.
-Format rules: no headings, no bold, no horizontal rules, no emoji. Use a short bullet list only when listing 3+ discrete items; otherwise paragraphs. Inline [n] citations for every proposition. Keep total length tight (≤ 350 words).`;
+Format rules: no headings, no bold, no horizontal rules, no emoji. Use a short bullet list only when listing 3+ discrete items; otherwise paragraphs. Inline [n] citations for every proposition. Keep total length tight (≤ 350 words).
+
+Language: ${langDirective}`;
 
     if (mode === "contract") {
       systemPrompt = `You are Weybre AI's contract risk analyst for Indian law. Review the clause/contract against retrieved Indian precedents.
