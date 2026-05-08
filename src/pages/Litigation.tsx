@@ -16,6 +16,9 @@ import {
   Gavel, Calendar, ScrollText, ShieldAlert, ListChecks, Download,
 } from "lucide-react";
 import { exportAiResultPdf } from "@/lib/exportPdf";
+import { useTranslation } from "react-i18next";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
+import { ReadAloudButton } from "@/components/ReadAloudButton";
 
 type Mode = "cnr" | "keyword" | "document";
 
@@ -61,6 +64,7 @@ const SAMPLES = {
 };
 
 const Litigation = () => {
+  const { i18n } = useTranslation();
   const [mode, setMode] = useState<Mode>("cnr");
   const [cnr, setCnr] = useState("");
   const [query, setQuery] = useState("");
@@ -98,7 +102,7 @@ const Litigation = () => {
     setIntel(null);
     try {
       const { data, error } = await supabase.functions.invoke("litigation-intel", {
-        body: { mode, cnr, query, documentText },
+        body: { mode, cnr, query, documentText, language: i18n.language },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);

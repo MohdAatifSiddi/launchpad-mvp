@@ -10,6 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Sparkles, ExternalLink, Scale, FileSearch, TrendingUp, Download } from "lucide-react";
 import { exportAiResultPdf } from "@/lib/exportPdf";
+import { useTranslation } from "react-i18next";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
+import { ReadAloudButton } from "@/components/ReadAloudButton";
 
 type Mode = "guide" | "predict" | "contract";
 
@@ -48,6 +51,7 @@ const MODE_META: Record<Mode, { label: string; icon: any; placeholder: string }>
 };
 
 const Decide = () => {
+  const { i18n } = useTranslation();
   const [mode, setMode] = useState<Mode>("guide");
   const [problem, setProblem] = useState("");
   const [contract, setContract] = useState("");
@@ -69,7 +73,7 @@ const Decide = () => {
     setCases([]);
     try {
       const { data, error } = await supabase.functions.invoke("decision-engine", {
-        body: { problem, contract, mode },
+        body: { problem, contract, mode, language: i18n.language },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
