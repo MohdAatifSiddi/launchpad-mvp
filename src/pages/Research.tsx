@@ -11,6 +11,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Sparkles, BookOpen, Save, Loader2, ArrowUp, Globe, Scale, ExternalLink, Search, Download } from "lucide-react";
 import { exportAiResultPdf } from "@/lib/exportPdf";
+import { useTranslation } from "react-i18next";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
+import { ReadAloudButton } from "@/components/ReadAloudButton";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -70,6 +74,7 @@ const PROGRESS_STEPS_WEB = [
 
 const Research = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const [mode, setMode] = useState<SearchMode>("case-law");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -115,13 +120,13 @@ const Research = () => {
 
     try {
       if (activeMode === "case-law") {
-        const { data, error } = await supabase.functions.invoke("research", { body: { query: text } });
+        const { data, error } = await supabase.functions.invoke("research", { body: { query: text, language: i18n.language } });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         setAnswer(data.answer ?? "");
         setCitations(data.citations ?? []);
       } else {
-        const { data, error } = await supabase.functions.invoke("web-search", { body: { query: text } });
+        const { data, error } = await supabase.functions.invoke("web-search", { body: { query: text, language: i18n.language } });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         setAnswer(data.answer ?? "");
@@ -238,15 +243,18 @@ const Research = () => {
               {mode === "web" ? <Globe className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
               {mode === "web" ? "AI web search · cited live sources" : "Indian SC corpus · cited"}
             </span>
-            <Button
-              onClick={() => handleAsk()}
-              disabled={loading || !query.trim()}
-              size="sm"
-              className="rounded-full bg-primary px-4 hover:bg-primary-glow"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-              {mode === "web" ? "Search" : "Ask"}
-            </Button>
+            <div className="flex items-center gap-1">
+              <VoiceInputButton onTranscript={(text) => setQuery((q) => (q ? q + " " : "") + text)} />
+              <Button
+                onClick={() => handleAsk()}
+                disabled={loading || !query.trim()}
+                size="sm"
+                className="rounded-full bg-primary px-4 hover:bg-primary-glow"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+                {mode === "web" ? "Search" : "Ask"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -337,6 +345,7 @@ const Research = () => {
                 </span>
               </div>
               <div className="flex items-center gap-1">
+                <ReadAloudButton text={answer} />
                 <Button
                   size="sm"
                   variant="ghost"
