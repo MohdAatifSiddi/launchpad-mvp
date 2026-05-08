@@ -115,13 +115,13 @@ const Research = () => {
 
     try {
       if (activeMode === "case-law") {
-        const { data, error } = await supabase.functions.invoke("research", { body: { query: text } });
+        const { data, error } = await supabase.functions.invoke("research", { body: { query: text, language: i18n.language } });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         setAnswer(data.answer ?? "");
         setCitations(data.citations ?? []);
       } else {
-        const { data, error } = await supabase.functions.invoke("web-search", { body: { query: text } });
+        const { data, error } = await supabase.functions.invoke("web-search", { body: { query: text, language: i18n.language } });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         setAnswer(data.answer ?? "");
