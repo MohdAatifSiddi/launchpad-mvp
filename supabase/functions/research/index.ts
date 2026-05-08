@@ -89,10 +89,15 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return json({ error: "Unauthorized" }, 401);
 
-    const { query, matter_id } = await req.json();
+    const { query, matter_id, language: bodyLang } = await req.json();
     if (!query || typeof query !== "string" || query.length < 3) {
       return json({ error: "Query must be at least 3 characters" }, 400);
     }
+    const isDevanagari = /[\u0900-\u097F]/.test(query);
+    const lang: "en" | "hi" = isDevanagari ? "hi" : (bodyLang === "hi" ? "hi" : "en");
+    const langDirective = lang === "hi"
+      ? "Respond in Hindi (Devanagari script). Keep Indian legal terms (Section, Article, Hon'ble, ratio, obiter) and case citations in their original English form. Indian legal vocabulary mixed with Hindi explanation is welcome."
+      : "Respond in English. If the user wrote in Hinglish or mixed script, reply in clear English.";
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const queryEmbedding = zeroEmbedding();
