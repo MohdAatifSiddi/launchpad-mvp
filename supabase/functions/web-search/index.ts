@@ -118,7 +118,9 @@ Format rules: no headings, no bold, no horizontal rules, no emoji. Plain paragra
 
 Open with a 2-3 sentence direct answer. Continue with supporting detail in prose, every factual claim carrying an inline [n] citation matching the numbered sources. Close with a brief caveat on what to verify. End with one short line: "Verify before relying on this for filings."
 
-Hard rules: never invent facts, statutes or case names. Prefer authoritative Indian sources (.gov.in, .nic.in, SC/HC sites, BCI, MoL, LiveLaw, Bar & Bench, SCC Online). Indian vocabulary (Section, Article, lakh/crore). Don't give legal advice — frame as "according to [source]…". Maximum 300 words.`;
+Hard rules: never invent facts, statutes or case names. Prefer authoritative Indian sources (.gov.in, .nic.in, SC/HC sites, BCI, MoL, LiveLaw, Bar & Bench, SCC Online). Indian vocabulary (Section, Article, lakh/crore). Don't give legal advice — frame as "according to [source]…". Maximum 300 words.
+
+Language: ${langDirective}`;
 
     const sourceContext = sources.map((s) => `[${s.n}] ${s.title}\nURL: ${s.url}\nSource: ${s.domain}\nExcerpt: ${s.snippet ?? ""}`).join("\n\n---\n\n");
     const userPrompt = `QUESTION: ${query}\n\nREAL WEB SEARCH RESULTS FROM TAVILY:\n\n${sourceContext}\n\nAnswer using only these sources. Use [n] citations that match the numbered sources.`;
