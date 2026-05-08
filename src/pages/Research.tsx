@@ -11,6 +11,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Sparkles, BookOpen, Save, Loader2, ArrowUp, Globe, Scale, ExternalLink, Search, Download } from "lucide-react";
 import { exportAiResultPdf } from "@/lib/exportPdf";
+import { useTranslation } from "react-i18next";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
+import { ReadAloudButton } from "@/components/ReadAloudButton";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -70,6 +74,7 @@ const PROGRESS_STEPS_WEB = [
 
 const Research = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const [mode, setMode] = useState<SearchMode>("case-law");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
