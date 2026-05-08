@@ -44,8 +44,14 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const query = typeof body.query === "string" ? body.query.trim() : "";
+    const bodyLang = body.language;
     if (query.length < 3) return json({ error: "Query must be at least 3 characters" }, 400);
     if (!TAVILY_API_KEY) return json({ error: "Tavily API key is not configured" }, 500);
+    const isDevanagari = /[\u0900-\u097F]/.test(query);
+    const lang: "en" | "hi" = isDevanagari ? "hi" : (bodyLang === "hi" ? "hi" : "en");
+    const langDirective = lang === "hi"
+      ? "Respond in Hindi (Devanagari script). Keep statute names, case names and URLs in English."
+      : "Respond in English.";
 
     const search = await fetch("https://api.tavily.com/search", {
       method: "POST",
