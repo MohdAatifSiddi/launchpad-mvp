@@ -269,7 +269,9 @@ Hard rules:
 - Never invent cases, citations or sections not in CONTEXT. If CONTEXT doesn't answer, say so plainly.
 - Indian legal vocabulary (Section, Article, lakh, Hon'ble, ratio, obiter).
 - Don't give legal advice; frame as "the Supreme Court has held…".
-- Total length ≤ 450 words.`;
+- Total length ≤ 450 words.
+
+Language: ${langDirective}`;
 
     const userPrompt = `QUESTION: ${query}\n\nCONTEXT (ranked Indian precedents):\n\n${context}`;
 
