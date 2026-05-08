@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Sparkles, ExternalLink, Scale, FileSearch, TrendingUp } from "lucide-react";
+import { Loader2, Sparkles, ExternalLink, Scale, FileSearch, TrendingUp, Download } from "lucide-react";
+import { exportAiResultPdf } from "@/lib/exportPdf";
 
 type Mode = "guide" | "predict" | "contract";
 
@@ -145,6 +146,35 @@ const Decide = () => {
         {answer && (
           <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
             <Card className="p-6">
+              <div className="mb-3 flex items-center justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    exportAiResultPdf({
+                      title:
+                        mode === "contract"
+                          ? "Contract risk analysis"
+                          : mode === "predict"
+                          ? "Outcome prediction"
+                          : "Decision Engine brief",
+                      subtitle: MODE_META[mode].label,
+                      query: mode === "contract" ? problem || "(contract review)" : problem,
+                      body: answer,
+                      sources: cases.map((c) => ({
+                        n: c.n,
+                        title: c.title,
+                        url: c.url,
+                        source: c.source,
+                        date: c.date,
+                        cited_by: c.cited_by,
+                      })),
+                    })
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" /> Download PDF
+                </Button>
+              </div>
               <div className="prose prose-sm max-w-none whitespace-pre-wrap font-sans text-foreground">
                 {answer}
               </div>

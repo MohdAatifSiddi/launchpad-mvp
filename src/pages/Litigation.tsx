@@ -13,8 +13,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Loader2, Sparkles, ExternalLink, Hash, Search, Upload, Bell, BellRing, Trash2,
-  Gavel, Calendar, ScrollText, ShieldAlert, ListChecks,
+  Gavel, Calendar, ScrollText, ShieldAlert, ListChecks, Download,
 } from "lucide-react";
+import { exportAiResultPdf } from "@/lib/exportPdf";
 
 type Mode = "cnr" | "keyword" | "document";
 
@@ -280,9 +281,33 @@ const Litigation = () => {
                       <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{intel.mode === "cnr" ? "Live case" : intel.mode === "document" ? "Document analysis" : "Issue brief"}</p>
                       <h3 className="mt-1 font-serif text-2xl text-primary">{heading}</h3>
                     </div>
-                    <Button variant="outline" size="sm" onClick={trackCurrent}>
-                      <Bell className="mr-2 h-4 w-4" /> Track
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          exportAiResultPdf({
+                            title: heading || "Litigation Intelligence Brief",
+                            subtitle: intel.mode === "cnr" ? "Live case intelligence" : intel.mode === "document" ? "Document analysis" : "Issue brief",
+                            query: cnr || query,
+                            body: intel.brief,
+                            sources: intel.precedents.map((p, i) => ({
+                              n: i + 1,
+                              title: p.title,
+                              url: p.url,
+                              source: p.source,
+                              date: p.date,
+                              cited_by: p.cited_by,
+                            })),
+                          })
+                        }
+                      >
+                        <Download className="mr-2 h-4 w-4" /> PDF
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={trackCurrent}>
+                        <Bell className="mr-2 h-4 w-4" /> Track
+                      </Button>
+                    </div>
                   </div>
                   {intel.court_data && !intel.court_data.error && (
                     <CourtSummary data={intel.court_data} />

@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Sparkles, BookOpen, Save, Loader2, ArrowUp, Globe, Scale, ExternalLink, Search } from "lucide-react";
+import { Sparkles, BookOpen, Save, Loader2, ArrowUp, Globe, Scale, ExternalLink, Search, Download } from "lucide-react";
+import { exportAiResultPdf } from "@/lib/exportPdf";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -335,9 +336,36 @@ const Research = () => {
                   {resultMode === "web" ? "Web" : "Case law"}
                 </span>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setShowSave(true)}>
-                <Save className="h-4 w-4" /> Save
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    exportAiResultPdf({
+                      title: query || "Weybre AI research",
+                      subtitle: resultMode === "web" ? "Web research" : "Case-law research",
+                      query,
+                      body: answer,
+                      sources: (resultMode === "case-law" ? citations : webSources).map((s: any, i) => ({
+                        n: i + 1,
+                        title: s.title,
+                        url: s.url,
+                        citation: s.citation,
+                        neutral_citation: s.neutral_citation,
+                        court: s.court,
+                        decision_date: s.decision_date,
+                        domain: s.domain,
+                        cited_by: s.cited_by,
+                      })),
+                    })
+                  }
+                >
+                  <Download className="h-4 w-4" /> PDF
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowSave(true)}>
+                  <Save className="h-4 w-4" /> Save
+                </Button>
+              </div>
             </div>
 
             <article className="prose-px font-serif text-[1.05rem] leading-[1.75] text-foreground">
