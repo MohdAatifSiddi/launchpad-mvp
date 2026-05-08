@@ -18,14 +18,18 @@ type SearchMode = "case-law" | "web";
 
 interface Citation {
   id: string;
+  kind?: "internal" | "kanoon" | "web";
   title: string;
   citation?: string | null;
   neutral_citation?: string | null;
+  court?: string | null;
   decision_date?: string | null;
   bench?: string | null;
   judges?: string[] | null;
   headnote?: string | null;
   summary?: string | null;
+  url?: string | null;
+  cited_by?: number | null;
   similarity?: number;
 }
 
