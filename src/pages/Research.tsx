@@ -18,14 +18,18 @@ type SearchMode = "case-law" | "web";
 
 interface Citation {
   id: string;
+  kind?: "internal" | "kanoon" | "web";
   title: string;
   citation?: string | null;
   neutral_citation?: string | null;
+  court?: string | null;
   decision_date?: string | null;
   bench?: string | null;
   judges?: string[] | null;
   headnote?: string | null;
   summary?: string | null;
+  url?: string | null;
+  cited_by?: number | null;
   similarity?: number;
 }
 
@@ -52,9 +56,9 @@ const WEB_SAMPLES = [
 ];
 
 const PROGRESS_STEPS_CASE = [
-  "Searching Indian Supreme Court corpus…",
-  "Ranking by hybrid semantic + keyword score…",
-  "Synthesising answer with inline citations…",
+  "Searching SC corpus + Indian Kanoon in parallel…",
+  "Ranking precedents by authority, citations, and relevance…",
+  "Extracting principles, key paragraphs, and caveats…",
 ];
 
 const PROGRESS_STEPS_WEB = [
@@ -352,21 +356,36 @@ const Research = () => {
                   <span className="px-section-label">Cited judgments</span>
                 </div>
                 <div className="space-y-3">
-                  {citations.map((c, i) => (
-                    <div key={c.id} id={`cite-${i}`} className="rounded-xl border border-border bg-card p-5">
-                      <div className="mb-1 flex items-start justify-between gap-3">
-                        <h4 className="font-serif text-base font-semibold text-primary">[{i + 1}] {c.title}</h4>
-                        {c.similarity != null && <span className="font-mono text-[0.7rem] text-muted-foreground">{(c.similarity * 100).toFixed(0)}% match</span>}
-                      </div>
-                      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.7rem] text-muted-foreground">
-                        {c.neutral_citation && <span>{c.neutral_citation}</span>}
-                        {c.citation && <span>· {c.citation}</span>}
-                        {c.decision_date && <span>· {new Date(c.decision_date).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })}</span>}
-                        {c.bench && <span>· {c.bench}</span>}
-                      </div>
-                      {c.headnote && <p className="text-sm leading-relaxed text-muted-foreground">{c.headnote}</p>}
-                    </div>
-                  ))}
+                  {citations.map((c, i) => {
+                    const isKanoon = c.kind === "kanoon" && c.url;
+                    const Wrapper: any = isKanoon ? "a" : "div";
+                    const wrapperProps = isKanoon
+                      ? { href: c.url!, target: "_blank", rel: "noopener noreferrer", className: "group block rounded-xl border border-border bg-card p-5 transition-colors hover:border-accent/40" }
+                      : { className: "rounded-xl border border-border bg-card p-5" };
+                    return (
+                      <Wrapper key={c.id} id={`cite-${i}`} {...wrapperProps}>
+                        <div className="mb-1 flex items-start justify-between gap-3">
+                          <h4 className="font-serif text-base font-semibold text-primary group-hover:text-accent">
+                            [{i + 1}] {c.title}
+                          </h4>
+                          <div className="flex shrink-0 items-center gap-2 font-mono text-[0.7rem] text-muted-foreground">
+                            {c.cited_by ? <span title="Times cited">cited {c.cited_by}×</span> : null}
+                            {c.similarity != null && c.kind === "internal" && <span>{(c.similarity * 100).toFixed(0)}% match</span>}
+                            {isKanoon && <ExternalLink className="h-3.5 w-3.5" />}
+                          </div>
+                        </div>
+                        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.7rem] text-muted-foreground">
+                          <span className="rounded bg-accent-soft px-1 text-accent-foreground">{c.kind === "kanoon" ? "Indian Kanoon" : "SC corpus"}</span>
+                          {c.neutral_citation && <span>{c.neutral_citation}</span>}
+                          {c.citation && <span>· {c.citation}</span>}
+                          {c.court && !c.neutral_citation && <span>· {c.court}</span>}
+                          {c.decision_date && <span>· {new Date(c.decision_date).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })}</span>}
+                          {c.bench && <span>· {c.bench}</span>}
+                        </div>
+                        {c.headnote && <p className="text-sm leading-relaxed text-muted-foreground">{c.headnote}</p>}
+                      </Wrapper>
+                    );
+                  })}
                 </div>
               </div>
             )}
