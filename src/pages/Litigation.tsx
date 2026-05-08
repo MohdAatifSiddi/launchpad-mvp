@@ -270,10 +270,21 @@ const Litigation = () => {
 
               <div className="mt-4 flex items-center justify-between">
                 <AiDisclaimer />
-                <Button onClick={runIntel} disabled={loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Run Intelligence
-                </Button>
+                <div className="flex items-center gap-2">
+                  {mode !== "cnr" && (
+                    <VoiceInputButton
+                      onTranscript={(text) =>
+                        mode === "keyword"
+                          ? setQuery((q) => (q ? q + " " : "") + text)
+                          : setDocumentText((d) => (d ? d + " " : "") + text)
+                      }
+                    />
+                  )}
+                  <Button onClick={runIntel} disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Run Intelligence
+                  </Button>
+                </div>
               </div>
             </Card>
 
@@ -286,6 +297,7 @@ const Litigation = () => {
                       <h3 className="mt-1 font-serif text-2xl text-primary">{heading}</h3>
                     </div>
                     <div className="flex items-center gap-1">
+                      <ReadAloudButton text={intel.brief} />
                       <Button
                         variant="outline"
                         size="sm"

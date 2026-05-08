@@ -140,17 +140,21 @@ const Decide = () => {
           </div>
           <div className="mt-4 flex items-center justify-between">
             <AiDisclaimer />
-            <Button onClick={submit} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Run Decision Engine
-            </Button>
+            <div className="flex items-center gap-2">
+              <VoiceInputButton onTranscript={(text) => (mode === "contract" ? setContract((p) => (p ? p + " " : "") + text) : setProblem((p) => (p ? p + " " : "") + text))} />
+              <Button onClick={submit} disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Run Decision Engine
+              </Button>
+            </div>
           </div>
         </Card>
 
         {answer && (
           <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
             <Card className="p-6">
-              <div className="mb-3 flex items-center justify-end">
+              <div className="mb-3 flex items-center justify-end gap-1">
+                <ReadAloudButton text={answer ?? ""} />
                 <Button
                   variant="outline"
                   size="sm"
