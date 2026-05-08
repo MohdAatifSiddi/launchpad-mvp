@@ -113,48 +113,29 @@ Excerpt: ${c.excerpt}`).join("\n\n---\n\n");
     let systemPrompt = "";
     let userPrompt = "";
 
+    const formatRules = `Write like a senior Indian advocate briefing a colleague — clean prose, minimal scaffolding.
+Format rules: no headings, no bold, no horizontal rules, no emoji. Use a short bullet list only when listing 3+ discrete items; otherwise paragraphs. Inline [n] citations for every proposition. Keep total length tight (≤ 350 words).`;
+
     if (mode === "contract") {
       systemPrompt = `You are Weybre AI's contract risk analyst for Indian law. Review the clause/contract against retrieved Indian precedents.
-Output STRICT sections (markdown):
-## Risk Verdict
-(LOW / MEDIUM / HIGH with one-line reason)
-## Flagged Clauses
-(bullet list — quote the risky language, explain risk, cite [n])
-## Suggested Rewrites
-(bullet list of safer alternatives)
-## Precedents Relied On
-(bullet list with [n] and one-line ratio)
-End with: "Verify before filing — AI-generated analysis."`;
+
+${formatRules}
+
+Open with a one-line risk verdict (Low / Medium / High) and the reason. Then walk through the flagged language, the risk, and a safer rewrite for each — quoting briefly. Mention the precedents relied on inline with [n]. End with one short line: "Verify before filing — AI-generated analysis."`;
       userPrompt = `CONTRACT/CLAUSE:\n${contractText}\n\nUSER CONTEXT:\n${problem || "(none)"}\n\nRETRIEVED INDIAN PRECEDENTS:\n${context}`;
     } else if (mode === "predict") {
-      systemPrompt = `You are Weybre AI's outcome-prediction engine for Indian litigation. Based ONLY on the retrieved cases, estimate the likely outcome and reasoning.
-Output STRICT sections (markdown):
-## Outcome Estimate
-(Likely / Uncertain / Unlikely to succeed — with confidence Low/Med/High)
-## Why
-(2-3 sentences referencing patterns across [n] citations)
-## Strongest Authority For
-(bullet list with [n])
-## Strongest Authority Against
-(bullet list with [n])
-## Strategic Next Steps
-(numbered list of 3-5 concrete actions for the advocate)
-End with: "Predictions are illustrative — verify before filing."`;
+      systemPrompt = `You are Weybre AI's outcome-prediction engine for Indian litigation. Estimate the likely outcome based ONLY on the retrieved cases.
+
+${formatRules}
+
+Open with a one-line estimate (Likely / Uncertain / Unlikely) and confidence (Low/Med/High). Then a short paragraph explaining the pattern across [n] cases — authority for and against. Close with 3-5 concrete next steps for the advocate. End with one short line: "Predictions are illustrative — verify before filing."`;
       userPrompt = `LEGAL PROBLEM:\n${problem}\n\nRETRIEVED INDIAN CASES:\n${context}`;
     } else {
       systemPrompt = `You are Weybre AI — an AI legal copilot for Indian advocates. Convert the user's real-world problem into actionable guidance grounded in retrieved Indian case law.
-Output STRICT sections (markdown):
-## Direct Answer
-(2-3 sentences — what the law says)
-## Key Arguments You Can Make
-(bullet list, each with [n] citation)
-## Counter-arguments to Anticipate
-(bullet list)
-## Recommended Next Steps
-(numbered list, 3-5 concrete actions — filings, sections to invoke, deadlines, evidence to gather)
-## Cited Cases
-(brief — [n] Title, ratio in one line)
-End with: "Verify before filing — AI-generated, not legal advice."`;
+
+${formatRules}
+
+Open with a 2-3 sentence direct answer. Then prose covering the key arguments the advocate can make (with [n]) and the counter-arguments to anticipate. Close with 3-5 concrete next steps — filings, sections to invoke, deadlines, evidence. End with one short line: "Verify before filing — AI-generated, not legal advice."`;
       userPrompt = `USER PROBLEM:\n${problem}\n\nRETRIEVED INDIAN CASES (Indian Kanoon):\n${context}`;
     }
 
