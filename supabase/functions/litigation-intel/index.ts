@@ -131,6 +131,13 @@ Deno.serve(async (req) => {
     const cnr = String(body.cnr ?? "").trim().toUpperCase();
     const query = String(body.query ?? "").trim();
     const documentText = String(body.documentText ?? "").trim();
+    const bodyLang = body.language;
+    const probe = `${query} ${documentText.slice(0, 200)}`;
+    const isDevanagari = /[\u0900-\u097F]/.test(probe);
+    const lang: "en" | "hi" = isDevanagari ? "hi" : (bodyLang === "hi" ? "hi" : "en");
+    const langDirective = lang === "hi"
+      ? "Respond in Hindi (Devanagari script). Keep statute names, case names, sections, CNR and URLs in English."
+      : "Respond in English.";
 
     let resolvedMode = mode;
     if (mode === "auto") {
