@@ -1,5 +1,5 @@
-// Research edge function: hybrid retrieval (semantic + keyword) over SC judgments,
-// then synthesize a grounded answer with inline citations via Lovable AI Gateway.
+// Research edge function — Hybrid retrieval over Supreme Court corpus + Indian Kanoon,
+// then a structured grounded brief (answer → principles → ranked precedents → caveats).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -12,13 +12,14 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-const TAVILY_API_KEY = Deno.env.get("TAVILY_API_KEY")!;
+const TAVILY_API_KEY = Deno.env.get("TAVILY_API_KEY") ?? "";
+const IK_TOKEN = Deno.env.get("INDIAN_KANOON_API_TOKEN") ?? "";
+const IK_BASE = "https://api.indiankanoon.org";
 
-// Lovable AI Gateway does not yet expose an embeddings model.
-// We rely on the keyword (tsvector) half of search_judgments, which is highly
-// effective for legal text. A zero vector keeps the RPC happy without polluting ranks.
-function zeroEmbedding(): number[] {
-  return new Array(1536).fill(0);
+function zeroEmbedding(): number[] { return new Array(1536).fill(0); }
+function stripHtml(s = ""): string { return s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(); }
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
 async function expandLegalQuery(query: string): Promise<string> {
@@ -28,7 +29,7 @@ async function expandLegalQuery(query: string): Promise<string> {
     body: JSON.stringify({
       model: "google/gemini-2.5-flash-lite",
       messages: [
-        { role: "system", content: "Convert an Indian legal research question into concise Supreme Court search keywords. Return only keywords and legal phrases, no explanation." },
+        { role: "system", content: "Convert an Indian legal research question into concise Indian case-law search keywords. Include section numbers, statute names, and 1-2 doctrines. Return only keywords, no explanation." },
         { role: "user", content: query },
       ],
     }),
@@ -36,6 +37,27 @@ async function expandLegalQuery(query: string): Promise<string> {
   if (!r.ok) return query;
   const j = await r.json();
   return (j.choices?.[0]?.message?.content ?? query).replace(/[\n,;]+/g, " ").slice(0, 300);
+}
+
+async function ikSearch(query: string, limit = 6) {
+  if (!IK_TOKEN) return [];
+  const params = new URLSearchParams({ formInput: query, pagenum: "0" });
+  const r = await fetch(`${IK_BASE}/search/?${params}`, {
+    method: "POST",
+    headers: { Authorization: `Token ${IK_TOKEN}`, Accept: "application/json" },
+  });
+  if (!r.ok) { console.error("IK search error", r.status); return []; }
+  const j = await r.json().catch(() => ({}));
+  const docs = Array.isArray(j.docs) ? j.docs.slice(0, limit) : [];
+  return docs.map((d: any) => ({
+    tid: d.tid,
+    title: stripHtml(d.title ?? ""),
+    source: d.docsource ?? "",
+    date: d.publishdate ?? null,
+    cited_by: d.numcitedby ?? 0,
+    headline: stripHtml(d.headline ?? "").slice(0, 1200),
+    url: `https://indiankanoon.org/doc/${d.tid}/`,
+  }));
 }
 
 async function searchSupremeCourtWeb(query: string) {
@@ -47,18 +69,13 @@ async function searchSupremeCourtWeb(query: string) {
       api_key: TAVILY_API_KEY,
       query: `${query} Supreme Court of India judgment case law`,
       search_depth: "advanced",
-      max_results: 8,
-      include_answer: false,
-      include_raw_content: false,
+      max_results: 6,
       include_domains: ["sci.gov.in", "main.sci.gov.in", "indiankanoon.org", "livelaw.in", "barandbench.com"],
     }),
   });
-  if (!r.ok) {
-    console.error("Tavily case fallback error", r.status, await r.text());
-    return [];
-  }
+  if (!r.ok) return [];
   const j = await r.json();
-  return Array.isArray(j.results) ? j.results.filter((x: any) => x?.url).slice(0, 8) : [];
+  return Array.isArray(j.results) ? j.results.filter((x: any) => x?.url).slice(0, 6) : [];
 }
 
 Deno.serve(async (req) => {
@@ -68,9 +85,7 @@ Deno.serve(async (req) => {
     const auth = req.headers.get("Authorization");
     if (!auth) return json({ error: "Unauthorized" }, 401);
 
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: auth } },
-    });
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: auth } } });
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return json({ error: "Unauthorized" }, 401);
 
@@ -80,99 +95,184 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // 1. Hybrid retrieval (keyword-only until embeddings are available)
     const queryEmbedding = zeroEmbedding();
-    const { data: judgments, error: searchErr } = await admin.rpc("search_judgments", {
-      query_text: query,
-      query_embedding: `[${queryEmbedding.join(",")}]`,
-      match_count: 8,
-    });
-    if (searchErr) {
-      console.error("search error", searchErr);
-      return json({ error: "Search failed: " + searchErr.message }, 500);
-    }
 
-    let cases = judgments ?? [];
-    if (cases.length < 4) {
-      const expandedQuery = await expandLegalQuery(query);
-      const { data: expandedJudgments, error: expandedErr } = await admin.rpc("search_judgments", {
-        query_text: expandedQuery,
+    // ---------- 1. Hybrid retrieval in parallel: SC corpus + Indian Kanoon ----------
+    const [internalRes, ikDocs] = await Promise.all([
+      admin.rpc("search_judgments", {
+        query_text: query,
         query_embedding: `[${queryEmbedding.join(",")}]`,
-        match_count: 8,
+        match_count: 6,
+      }),
+      ikSearch(query, 6),
+    ]);
+
+    if (internalRes.error) console.error("search error", internalRes.error);
+    let internal = internalRes.data ?? [];
+
+    // Expand query if internal corpus is sparse
+    if (internal.length < 3) {
+      const expanded = await expandLegalQuery(query);
+      const { data: more } = await admin.rpc("search_judgments", {
+        query_text: expanded,
+        query_embedding: `[${queryEmbedding.join(",")}]`,
+        match_count: 6,
       });
-      if (expandedErr) console.error("expanded search error", expandedErr);
-      const seen = new Set(cases.map((c: any) => c.id));
-      for (const c of expandedJudgments ?? []) {
-        if (!seen.has(c.id)) cases.push(c);
-      }
-      cases = cases.slice(0, 8);
+      const seen = new Set(internal.map((c: any) => c.id));
+      for (const c of more ?? []) if (!seen.has(c.id)) internal.push(c);
+      internal = internal.slice(0, 6);
     }
 
-    if (cases.length === 0) {
+    // ---------- 2. Build unified, ranked precedent list ----------
+    type Source = {
+      n: number;
+      kind: "internal" | "kanoon";
+      id: string;
+      title: string;
+      citation?: string | null;
+      neutral_citation?: string | null;
+      court?: string | null;
+      bench?: string | null;
+      judges?: string[] | null;
+      decision_date?: string | null;
+      headnote?: string | null;
+      summary?: string | null;
+      url?: string | null;
+      cited_by?: number | null;
+      similarity?: number | null;
+      rank_score?: number;
+    };
+
+    const sources: Source[] = [];
+    let n = 1;
+
+    // Score internal: weight = similarity * 1.0 + recency bonus
+    for (const c of internal) {
+      const sim = Number(c.similarity ?? 0);
+      const rk = Number(c.rank ?? 0);
+      sources.push({
+        n: n++,
+        kind: "internal",
+        id: c.id,
+        title: c.title,
+        citation: c.citation,
+        neutral_citation: c.neutral_citation,
+        court: c.court,
+        bench: c.bench,
+        judges: c.judges,
+        decision_date: c.decision_date,
+        headnote: c.headnote,
+        summary: c.summary,
+        similarity: sim,
+        rank_score: 1.0 + sim * 0.6 + rk * 0.4, // internal corpus gets a base authority boost
+      });
+    }
+
+    // De-dupe Kanoon vs internal by title similarity
+    const internalTitles = new Set(internal.map((c: any) => (c.title ?? "").toLowerCase().slice(0, 60)));
+    for (const d of ikDocs) {
+      const key = d.title.toLowerCase().slice(0, 60);
+      if (internalTitles.has(key)) continue;
+      const cited = Number(d.cited_by || 0);
+      sources.push({
+        n: n++,
+        kind: "kanoon",
+        id: String(d.tid),
+        title: d.title,
+        citation: null,
+        neutral_citation: null,
+        court: d.source,
+        bench: null,
+        judges: null,
+        decision_date: d.date,
+        headnote: d.headline,
+        summary: null,
+        url: d.url,
+        cited_by: cited,
+        rank_score: 0.7 + Math.log10(1 + cited) * 0.15, // log-scale citation authority
+      });
+    }
+
+    // Sort by combined precedent score, renumber
+    sources.sort((a, b) => (b.rank_score ?? 0) - (a.rank_score ?? 0));
+    sources.forEach((s, i) => { s.n = i + 1; });
+    const ranked = sources.slice(0, 8);
+
+    // ---------- 3. Fallback to live web if everything is empty ----------
+    if (ranked.length === 0) {
       const webCases = await searchSupremeCourtWeb(query);
       if (webCases.length === 0) {
         return json({
-          answer: "I searched the internal Supreme Court corpus and live legal sources but could not identify a reliable match for this query. Try adding the statute name, section number, legal doctrine, or one known case name.",
+          answer: "I searched the Supreme Court corpus, Indian Kanoon, and live legal sources but could not identify a reliable match. Try adding a statute name, section number, doctrine, or one known case name.",
           citations: [],
         });
       }
-      const webContext = webCases.map((c: any, i: number) => `[${i + 1}] ${c.title ?? "Supreme Court result"}\nURL: ${c.url}\nExcerpt: ${c.content ?? ""}`).join("\n\n---\n\n");
-      const webPrompt = `QUESTION: ${query}\n\nLIVE SUPREME COURT / LEGAL SEARCH RESULTS:\n\n${webContext}\n\nAnswer using only these search results. Cite every proposition with [n]. If a result is secondary reporting, say so.`;
+      const webContext = webCases.map((c: any, i: number) => `[${i + 1}] ${c.title ?? "Result"}\nURL: ${c.url}\nExcerpt: ${c.content ?? ""}`).join("\n\n---\n\n");
       const webAi = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: "You are Weybre AI, a legal research assistant for Indian lawyers. Answer from live Supreme Court/legal search results only. Use numbered citations. Be clear when sources are court pages versus legal reporting. Never invent cases." },
-            { role: "user", content: webPrompt },
+            { role: "system", content: "You are Weybre AI, a legal research assistant for Indian lawyers. Answer from live legal search results only with [n] citations. Never invent cases." },
+            { role: "user", content: `QUESTION: ${query}\n\nLIVE RESULTS:\n\n${webContext}` },
           ],
         }),
       });
       if (!webAi.ok) return json({ error: "AI synthesis failed" }, 500);
-      const webJson = await webAi.json();
+      const wj = await webAi.json();
       return json({
-        answer: webJson.choices?.[0]?.message?.content ?? "No answer generated.",
+        answer: wj.choices?.[0]?.message?.content ?? "No answer generated.",
         citations: webCases.map((c: any, i: number) => ({
-          n: i + 1,
-          id: c.url,
-          title: c.title ?? "Live legal source",
-          citation: c.url,
+          n: i + 1, kind: "web", id: c.url, title: c.title ?? "Live source",
           court: new URL(c.url).hostname.replace(/^www\./, ""),
-          decision_date: null,
-          bench: "Live source fallback",
-          judges: null,
-          headnote: c.content ?? null,
-          summary: c.content ?? null,
-          similarity: c.score ?? null,
+          headnote: c.content ?? null, url: c.url,
         })),
       });
     }
 
-    // 2. Build grounded prompt
-    const context = cases.map((c: any, i: number) => {
-      const cite = c.neutral_citation || c.citation || `Case ${i + 1}`;
-      return `[${i + 1}] ${c.title}
+    // ---------- 4. Build grounded structured prompt ----------
+    const context = ranked.map((s) => {
+      const cite = s.neutral_citation || s.citation || (s.kind === "kanoon" ? `Indian Kanoon doc ${s.id}` : `Case ${s.n}`);
+      const meta = [s.court, s.bench, s.decision_date].filter(Boolean).join(" | ");
+      const authority = s.kind === "internal" ? "SC Corpus" : `Indian Kanoon${s.cited_by ? ` (cited ${s.cited_by}×)` : ""}`;
+      return `[${s.n}] ${s.title}
 Citation: ${cite}
-Court: ${c.court} | Bench: ${c.bench ?? "—"} | Date: ${c.decision_date ?? "—"}
-${c.headnote ? `Headnote: ${c.headnote.slice(0, 1500)}` : ""}
-${c.summary ? `Summary: ${c.summary.slice(0, 800)}` : ""}`;
+Source authority: ${authority} | ${meta || "—"}
+${s.headnote ? `Excerpt: ${s.headnote.slice(0, 1500)}` : ""}
+${s.summary ? `Summary: ${s.summary.slice(0, 600)}` : ""}`;
     }).join("\n\n---\n\n");
 
-    const systemPrompt = `You are Weybre AI, a legal research assistant for Indian lawyers. You answer questions strictly grounded in the Supreme Court of India judgments provided in CONTEXT.
+    const systemPrompt = `You are Weybre AI, an Indian legal research engine. You synthesise grounded answers from CONTEXT (Supreme Court of India corpus + Indian Kanoon precedents) for practising advocates.
+
+Output STRICT markdown with these exact sections:
+
+## Direct answer
+2-3 sentences answering the question precisely. Every legal proposition must carry a [n] citation.
+
+## Legal principles
+Bullet list of the doctrines / statutory provisions that govern the question. Cite the source(s) for each principle.
+
+## Strongest precedents (ranked)
+Numbered list (most authoritative first). For each: case name, [n], one-line ratio decidendi, and how it applies here. Prefer Constitution Benches > larger benches > more-recent SC > High Court.
+
+## Key paragraphs
+Quote or paraphrase the 2-4 most relevant passages from CONTEXT, each tagged with [n]. Keep each ≤ 60 words.
+
+## Caveats & limitations
+Bullet list — distinguishing facts, statutory amendments, conflicting authority, jurisdictional limits.
 
 RULES:
-1. Cite cases inline using [1], [2], etc. matching the numbered cases in CONTEXT. Every legal proposition MUST have a citation.
-2. If CONTEXT does not contain the answer, say so explicitly — do NOT invent law or cases.
-3. Use Indian legal terminology (Section, Article, sub-section, lakh, crore, plaintiff/defendant or appellant/respondent as appropriate).
-4. Structure: brief direct answer (2-3 sentences) → key cases with reasoning → caveats/limitations.
-5. Never give legal advice — frame as "the Supreme Court has held…" not "you should…".
-6. Maximum 400 words. Be precise, not verbose.`;
+- Cite EVERY proposition with [n] matching CONTEXT numbering.
+- Never invent cases, citations, or sections not in CONTEXT.
+- Use Indian legal vocabulary (Section, Article, lakh, Hon'ble, ratio, obiter, etc.).
+- If CONTEXT does not answer the question, say so explicitly in "Direct answer" and mark "Strongest precedents" as "None directly on point."
+- Do not give legal advice; frame as "the Supreme Court has held…" / "the position appears to be…".
+- Keep total length ≤ 550 words.`;
 
-    const userPrompt = `QUESTION: ${query}\n\nCONTEXT (Supreme Court of India judgments):\n\n${context}\n\nAnswer the question using only the cases above, with [n] citations.`;
+    const userPrompt = `QUESTION: ${query}\n\nCONTEXT (ranked Indian precedents):\n\n${context}`;
 
-    // 3. Synthesize
+    // ---------- 5. Synthesize ----------
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
@@ -196,26 +296,28 @@ RULES:
     const j = await r.json();
     const answer = j.choices?.[0]?.message?.content ?? "No answer generated.";
 
-    const citations = cases.map((c: any, i: number) => ({
-      n: i + 1,
-      id: c.id,
-      title: c.title,
-      citation: c.neutral_citation || c.citation,
-      court: c.court,
-      decision_date: c.decision_date,
-      bench: c.bench,
-      judges: c.judges,
-      headnote: c.headnote,
-      summary: c.summary,
-      similarity: c.similarity,
+    const citations = ranked.map((s) => ({
+      n: s.n,
+      kind: s.kind,
+      id: s.id,
+      title: s.title,
+      citation: s.neutral_citation || s.citation,
+      court: s.court,
+      decision_date: s.decision_date,
+      bench: s.bench,
+      judges: s.judges,
+      headnote: s.headnote,
+      summary: s.summary,
+      url: s.url,
+      cited_by: s.cited_by ?? null,
+      similarity: s.similarity ?? null,
     }));
 
-    // 4. Log usage (best-effort)
     await admin.from("usage_events").insert({
       user_id: user.id,
       event_type: "research_query",
       tokens: j.usage?.total_tokens ?? 0,
-      metadata: { query, matter_id, cases: cases.length },
+      metadata: { query, matter_id, internal: internal.length, kanoon: ikDocs.length, ranked: ranked.length },
     });
 
     return json({ answer, citations });
@@ -224,10 +326,3 @@ RULES:
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
