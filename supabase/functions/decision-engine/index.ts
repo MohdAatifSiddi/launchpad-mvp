@@ -79,9 +79,16 @@ Deno.serve(async (req) => {
     const problem = typeof body.problem === "string" ? body.problem.trim() : "";
     const mode = body.mode === "contract" ? "contract" : body.mode === "predict" ? "predict" : "guide";
     const contractText = typeof body.contract === "string" ? body.contract.trim() : "";
+    const bodyLang = body.language;
     if (problem.length < 5 && contractText.length < 20) {
       return json({ error: "Describe the problem (min 5 chars) or paste a contract clause." }, 400);
     }
+    const probeText = problem || contractText;
+    const isDevanagari = /[\u0900-\u097F]/.test(probeText);
+    const lang: "en" | "hi" = isDevanagari ? "hi" : (bodyLang === "hi" ? "hi" : "en");
+    const langDirective = lang === "hi"
+      ? "Respond in Hindi (Devanagari script). Keep statute names, case names, sections and URLs in English."
+      : "Respond in English.";
 
     const searchQuery = problem || contractText.slice(0, 200);
     const docs = await ikSearch(searchQuery).catch((e) => {
