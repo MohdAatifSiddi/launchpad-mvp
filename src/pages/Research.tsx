@@ -345,6 +345,7 @@ const Research = () => {
                 </span>
               </div>
               <div className="flex items-center gap-1">
+                <ReadAloudButton text={answer} />
                 <Button
                   size="sm"
                   variant="ghost"
