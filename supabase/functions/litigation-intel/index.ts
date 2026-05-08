@@ -203,7 +203,9 @@ Cover, in this order, as natural prose:
 - Drafting hooks (headings, prayer clauses, notice points) the lawyer can copy.
 - Risk flags — limitations, jurisdictional issues, weaknesses.
 
-Keep it tight (≤ 500 words). End with one short line: "Verify before filing — AI-generated, not legal advice."`;
+Keep it tight (≤ 500 words). End with one short line: "Verify before filing — AI-generated, not legal advice."
+
+Language: ${langDirective}`;
 
     const userPrompt = `USER QUERY:\n${query || cnr || "(document-driven request)"}\n\n${courtContext}\n\nPRECEDENTS (Indian Kanoon):\n${precedentContext || "(none retrieved)"}${docContext}`;
 
