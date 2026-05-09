@@ -1,4 +1,4 @@
-import { encode as base64Encode } from "https://deno.land/std@0.224.0/encoding/base64.ts";
+import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 
@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
       throw new Error(`TTS ${resp.status}: ${err.slice(0, 300)}`);
     }
     const buf = await resp.arrayBuffer();
-    const audio = base64Encode(new Uint8Array(buf));
+    const audio = encodeBase64(new Uint8Array(buf));
     return new Response(JSON.stringify({ audio }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
