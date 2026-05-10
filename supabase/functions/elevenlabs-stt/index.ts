@@ -1,19 +1,15 @@
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     if (!ELEVENLABS_API_KEY) throw new Error("ELEVENLABS_API_KEY not configured");
     const { audio, language, mime } = await req.json();
     if (!audio) throw new Error("audio required");
 
+    // base64 -> bytes
     const bin = Uint8Array.from(atob(audio), (c) => c.charCodeAt(0));
     const blob = new Blob([bin], { type: mime ?? "audio/webm" });
 
@@ -30,14 +26,13 @@ Deno.serve(async (req) => {
     });
     if (!resp.ok) {
       const err = await resp.text();
-      throw new Error(`STT ${resp.status}: ${err.slice(0, 300)}`);
+      throw new Error(`STT ${resp.status}: ${err.slice(0, 200)}`);
     }
     const data = await resp.json();
     return new Response(JSON.stringify({ text: data.text ?? "", language: data.language_code }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("STT error:", (e as Error).message);
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
