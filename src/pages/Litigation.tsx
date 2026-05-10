@@ -16,9 +16,6 @@ import {
   Gavel, Calendar, ScrollText, ShieldAlert, ListChecks, Download,
 } from "lucide-react";
 import { exportAiResultPdf } from "@/lib/exportPdf";
-import { useTranslation } from "react-i18next";
-import { VoiceInputButton } from "@/components/VoiceInputButton";
-import { ReadAloudButton } from "@/components/ReadAloudButton";
 
 type Mode = "cnr" | "keyword" | "document";
 
@@ -64,7 +61,6 @@ const SAMPLES = {
 };
 
 const Litigation = () => {
-  const { i18n } = useTranslation();
   const [mode, setMode] = useState<Mode>("cnr");
   const [cnr, setCnr] = useState("");
   const [query, setQuery] = useState("");
@@ -102,7 +98,7 @@ const Litigation = () => {
     setIntel(null);
     try {
       const { data, error } = await supabase.functions.invoke("litigation-intel", {
-        body: { mode, cnr, query, documentText, language: i18n.language },
+        body: { mode, cnr, query, documentText },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -270,21 +266,10 @@ const Litigation = () => {
 
               <div className="mt-4 flex items-center justify-between">
                 <AiDisclaimer />
-                <div className="flex items-center gap-2">
-                  {mode !== "cnr" && (
-                    <VoiceInputButton
-                      onTranscript={(text) =>
-                        mode === "keyword"
-                          ? setQuery((q) => (q ? q + " " : "") + text)
-                          : setDocumentText((d) => (d ? d + " " : "") + text)
-                      }
-                    />
-                  )}
-                  <Button onClick={runIntel} disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Run Intelligence
-                  </Button>
-                </div>
+                <Button onClick={runIntel} disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Run Intelligence
+                </Button>
               </div>
             </Card>
 
@@ -297,7 +282,6 @@ const Litigation = () => {
                       <h3 className="mt-1 font-serif text-2xl text-primary">{heading}</h3>
                     </div>
                     <div className="flex items-center gap-1">
-                      <ReadAloudButton text={intel.brief} />
                       <Button
                         variant="outline"
                         size="sm"

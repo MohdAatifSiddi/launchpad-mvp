@@ -44,14 +44,8 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const query = typeof body.query === "string" ? body.query.trim() : "";
-    const bodyLang = body.language;
     if (query.length < 3) return json({ error: "Query must be at least 3 characters" }, 400);
     if (!TAVILY_API_KEY) return json({ error: "Tavily API key is not configured" }, 500);
-    const isDevanagari = /[\u0900-\u097F]/.test(query);
-    const lang: "en" | "hi" = isDevanagari ? "hi" : (bodyLang === "hi" ? "hi" : "en");
-    const langDirective = lang === "hi"
-      ? "Respond in Hindi (Devanagari script). Keep statute names, case names and URLs in English."
-      : "Respond in English.";
 
     const search = await fetch("https://api.tavily.com/search", {
       method: "POST",
@@ -118,9 +112,7 @@ Format rules: no headings, no bold, no horizontal rules, no emoji. Plain paragra
 
 Open with a 2-3 sentence direct answer. Continue with supporting detail in prose, every factual claim carrying an inline [n] citation matching the numbered sources. Close with a brief caveat on what to verify. End with one short line: "Verify before relying on this for filings."
 
-Hard rules: never invent facts, statutes or case names. Prefer authoritative Indian sources (.gov.in, .nic.in, SC/HC sites, BCI, MoL, LiveLaw, Bar & Bench, SCC Online). Indian vocabulary (Section, Article, lakh/crore). Don't give legal advice — frame as "according to [source]…". Maximum 300 words.
-
-Language: ${langDirective}`;
+Hard rules: never invent facts, statutes or case names. Prefer authoritative Indian sources (.gov.in, .nic.in, SC/HC sites, BCI, MoL, LiveLaw, Bar & Bench, SCC Online). Indian vocabulary (Section, Article, lakh/crore). Don't give legal advice — frame as "according to [source]…". Maximum 300 words.`;
 
     const sourceContext = sources.map((s) => `[${s.n}] ${s.title}\nURL: ${s.url}\nSource: ${s.domain}\nExcerpt: ${s.snippet ?? ""}`).join("\n\n---\n\n");
     const userPrompt = `QUESTION: ${query}\n\nREAL WEB SEARCH RESULTS FROM TAVILY:\n\n${sourceContext}\n\nAnswer using only these sources. Use [n] citations that match the numbered sources.`;

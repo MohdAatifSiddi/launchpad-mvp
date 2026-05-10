@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
-import { LanguageToggle } from "@/components/LanguageToggle";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
@@ -105,10 +104,7 @@ export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?
         {(title || action) && (
           <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/85 px-8 backdrop-blur-md">
             <h1 className="font-serif text-2xl font-semibold tracking-tight text-primary">{title}</h1>
-            <div className="flex items-center gap-2">
-              <LanguageToggle />
-              {action}
-            </div>
+            {action}
           </header>
         )}
         <div className="flex-1">{children}</div>
