@@ -63,7 +63,20 @@ const SAMPLES = {
   ],
 };
 
+interface BatchRow {
+  cnr: string;
+  status: "pending" | "running" | "done" | "error";
+  title?: string;
+  court?: string;
+  next_hearing?: string;
+  brief_excerpt?: string;
+  fraud_signal?: string;
+  error?: string;
+}
+
 const Litigation = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [mode, setMode] = useState<Mode>("cnr");
   const [cnr, setCnr] = useState("");
   const [query, setQuery] = useState("");
@@ -72,6 +85,10 @@ const Litigation = () => {
   const [intel, setIntel] = useState<IntelResponse | null>(null);
   const [watch, setWatch] = useState<WatchItem[]>([]);
   const [refreshing, setRefreshing] = useState<string | null>(null);
+  const [batchInput, setBatchInput] = useState("");
+  const [batchRows, setBatchRows] = useState<BatchRow[]>([]);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [creatingDraft, setCreatingDraft] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => { loadWatch(); }, []);
