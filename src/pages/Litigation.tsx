@@ -320,10 +320,11 @@ const Litigation = () => {
           <div className="space-y-6">
             <Card className="p-5">
               <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="cnr"><Hash className="mr-2 h-4 w-4" /> CNR</TabsTrigger>
                   <TabsTrigger value="keyword"><Search className="mr-2 h-4 w-4" /> Issue</TabsTrigger>
                   <TabsTrigger value="document"><Upload className="mr-2 h-4 w-4" /> Document</TabsTrigger>
+                  <TabsTrigger value="batch"><Layers className="mr-2 h-4 w-4" /> Batch</TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -369,31 +370,58 @@ const Litigation = () => {
                 </div>
               )}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(SAMPLES[mode] as string[]).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => {
-                      if (mode === "cnr") setCnr(s);
-                      else if (mode === "keyword") setQuery(s);
-                      else setDocumentText(s);
-                    }}
-                    className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-accent/10 hover:text-foreground"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
+              {mode === "batch" && (
+                <div className="mt-4 space-y-3">
+                  <Textarea
+                    placeholder={"Paste up to 50 CNRs (one per line, comma or space separated)\nDLCT010012342024\nMHCT020045672023"}
+                    value={batchInput}
+                    onChange={(e) => setBatchInput(e.target.value)}
+                    className="min-h-[140px] font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Runs Litigation Intel on each CNR in parallel (concurrency 4). Use this for high-volume defence portfolios.
+                  </p>
+                </div>
+              )}
+
+              {mode !== "batch" && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {(SAMPLES[mode] as string[]).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        if (mode === "cnr") setCnr(s);
+                        else if (mode === "keyword") setQuery(s);
+                        else setDocumentText(s);
+                      }}
+                      className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-4 flex items-center justify-between">
                 <AiDisclaimer />
-                <Button onClick={runIntel} disabled={loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Run Intelligence
-                </Button>
+                {mode === "batch" ? (
+                  <Button onClick={runBatch} disabled={batchRunning}>
+                    {batchRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Layers className="mr-2 h-4 w-4" />}
+                    Run Batch
+                  </Button>
+                ) : (
+                  <Button onClick={runIntel} disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Run Intelligence
+                  </Button>
+                )}
               </div>
             </Card>
+
+            {mode === "batch" && batchRows.length > 0 && (
+              <BatchResults rows={batchRows} />
+            )}
 
             {intel && (
               <>
