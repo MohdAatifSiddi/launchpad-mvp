@@ -195,8 +195,9 @@ Cover, in this order, as natural prose:
 - 3-5 concrete next steps — filings, sections to invoke, evidence, deadlines.
 - Drafting hooks (headings, prayer clauses, notice points) the lawyer can copy.
 - Risk flags — limitations, jurisdictional issues, weaknesses.
+- Fraud & predatory-pattern signals — call out, in one short paragraph prefixed exactly with "Fraud & predatory signals:", anything suggestive of document fraud, fabricated stamps/notarisation, back-dated filings, copy-paste boilerplate across many cases, repeat plaintiffs/advocates running mass-volume claims, suspicious limitation-period gymnastics, or coercive/extortionate notice patterns. If nothing is suspicious, write: "Fraud & predatory signals: none observed in the available record."
 
-Keep it tight (≤ 500 words). End with one short line: "Verify before filing — AI-generated, not legal advice."`;
+Keep it tight (≤ 550 words). End with one short line: "Verify before filing — AI-generated, not legal advice."`;
 
     const userPrompt = `USER QUERY:\n${query || cnr || "(document-driven request)"}\n\n${courtContext}\n\nPRECEDENTS (Indian Kanoon):\n${precedentContext || "(none retrieved)"}${docContext}`;
 
