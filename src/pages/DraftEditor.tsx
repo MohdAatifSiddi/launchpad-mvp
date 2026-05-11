@@ -9,11 +9,7 @@ import { ArrowLeft, FileDown, Loader2, Sparkles, ShieldAlert, ArrowUp, Upload, P
 import { TEMPLATES } from "./Drafts";
 import { AiDisclaimer } from "@/components/AiDisclaimer";
 import { toast } from "sonner";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
-import mammoth from "mammoth/mammoth.browser";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+import { extractTextFromFile } from "@/lib/extractText";
 
 interface Risk { clause: string; severity: "low" | "medium" | "high"; note: string; }
 interface Attachment { id: string; file_name: string; storage_path: string; mime_type: string; file_size: number; status: string; error_message?: string | null; }
@@ -26,32 +22,14 @@ const ALLOWED_UPLOAD_TYPES = [
   "text/plain",
   "text/markdown",
   "application/rtf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
 ];
 
 const formatFileSize = (bytes: number) => {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
-
-const extractTextFromFile = async (file: File) => {
-  if (file.type === "text/plain" || file.type === "text/markdown" || file.type === "application/rtf") {
-    return (await file.text()).slice(0, 60000);
-  }
-  if (file.type === "application/pdf") {
-    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-    const pages: string[] = [];
-    for (let pageNumber = 1; pageNumber <= Math.min(pdf.numPages, 80); pageNumber += 1) {
-      const page = await pdf.getPage(pageNumber);
-      const text = await page.getTextContent();
-      pages.push(text.items.map((item: any) => item.str).join(" "));
-    }
-    return pages.join("\n\n").slice(0, 60000);
-  }
-  if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-    return result.value.slice(0, 60000);
-  }
-  return "";
 };
 
 const DraftEditor = () => {
