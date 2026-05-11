@@ -194,6 +194,108 @@ const Litigation = () => {
     reader.readAsText(file);
   }
 
+  // ----- Batch CNR intake (parallel, max concurrency 4) -----
+  function parseCnrs(raw: string): string[] {
+    return Array.from(
+      new Set(
+        raw
+          .split(/[\s,;\n\r]+/)
+          .map(s => s.trim().toUpperCase())
+          .filter(s => /^[A-Z]{4}\d{12}$/.test(s))
+      )
+    );
+  }
+
+  async function runBatch() {
+    const cnrs = parseCnrs(batchInput);
+    if (cnrs.length === 0) {
+      toast.error("Paste one CNR per line (16 chars: 4 letters + 12 digits).");
+      return;
+    }
+    if (cnrs.length > 50) {
+      toast.error("Limit 50 CNRs per batch. Split into smaller runs.");
+      return;
+    }
+    const initial: BatchRow[] = cnrs.map(c => ({ cnr: c, status: "pending" }));
+    setBatchRows(initial);
+    setBatchRunning(true);
+
+    const CONCURRENCY = 4;
+    let cursor = 0;
+    const next = (): number => cursor++;
+
+    async function worker() {
+      while (true) {
+        const i = next();
+        if (i >= cnrs.length) return;
+        const cnr = cnrs[i];
+        setBatchRows(rows => rows.map((r, idx) => idx === i ? { ...r, status: "running" } : r));
+        try {
+          const { data, error } = await supabase.functions.invoke("litigation-intel", {
+            body: { mode: "cnr", cnr },
+          });
+          if (error) throw error;
+          if ((data as any)?.error) throw new Error((data as any).error);
+          const d = data as IntelResponse;
+          const c = (d.court_data as any)?.case ?? d.court_data ?? {};
+          const fraudMatch = /Fraud & predatory signals:\s*([^\n]+)/i.exec(d.brief ?? "");
+          setBatchRows(rows => rows.map((r, idx) => idx === i ? {
+            ...r,
+            status: "done",
+            title: c.title ?? c.case_title ?? `CNR ${cnr}`,
+            court: c.court_name ?? c.court ?? c.bench ?? "",
+            next_hearing: c.next_hearing_date ?? c.nextHearing ?? c.next_date ?? "",
+            brief_excerpt: (d.brief ?? "").slice(0, 240),
+            fraud_signal: fraudMatch ? fraudMatch[1].trim() : undefined,
+          } : r));
+        } catch (e: any) {
+          setBatchRows(rows => rows.map((r, idx) => idx === i ? {
+            ...r, status: "error", error: e?.message ?? "failed",
+          } : r));
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, cnrs.length) }, worker));
+    setBatchRunning(false);
+    toast.success(`Batch complete · ${cnrs.length} CNR${cnrs.length === 1 ? "" : "s"}`);
+  }
+
+  // ----- Auto-draft Reply / Written Statement from current intel -----
+  async function draftReplyFromIntel() {
+    if (!intel || !user) return;
+    setCreatingDraft(true);
+    try {
+      const ref = intel.mode === "cnr" ? cnr.toUpperCase() : (query || intel.query);
+      const title = `Reply — ${heading}`.slice(0, 120);
+      const { data, error } = await supabase.from("drafts").insert({
+        user_id: user.id,
+        template: "reply_notice",
+        title,
+        content: "",
+        inputs: {
+          case_context: {
+            cnr: intel.mode === "cnr" ? cnr.toUpperCase() : null,
+            query: intel.mode !== "cnr" ? ref : null,
+            heading,
+            brief: intel.brief,
+            precedents: intel.precedents.map((p, i) => ({
+              n: i + 1, title: p.title, source: p.source, date: p.date, url: p.url,
+            })),
+            court_data: intel.court_data ?? null,
+          },
+        } as any,
+      }).select("id").single();
+      if (error) throw error;
+      toast.success("Draft created with case context");
+      navigate(`/app/drafts/${data.id}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not create draft");
+    } finally {
+      setCreatingDraft(false);
+    }
+  }
+
   const heading = useMemo(() => {
     if (intel?.court_data?.case?.title) return intel.court_data.case.title;
     if (intel?.mode === "cnr") return `CNR ${cnr.toUpperCase()}`;
