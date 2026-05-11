@@ -9,11 +9,7 @@ import { ArrowLeft, FileDown, Loader2, Sparkles, ShieldAlert, ArrowUp, Upload, P
 import { TEMPLATES } from "./Drafts";
 import { AiDisclaimer } from "@/components/AiDisclaimer";
 import { toast } from "sonner";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
-import mammoth from "mammoth/mammoth.browser";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+import { extractTextFromFile } from "@/lib/extractText";
 
 interface Risk { clause: string; severity: "low" | "medium" | "high"; note: string; }
 interface Attachment { id: string; file_name: string; storage_path: string; mime_type: string; file_size: number; status: string; error_message?: string | null; }
@@ -26,32 +22,14 @@ const ALLOWED_UPLOAD_TYPES = [
   "text/plain",
   "text/markdown",
   "application/rtf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
 ];
 
 const formatFileSize = (bytes: number) => {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
-
-const extractTextFromFile = async (file: File) => {
-  if (file.type === "text/plain" || file.type === "text/markdown" || file.type === "application/rtf") {
-    return (await file.text()).slice(0, 60000);
-  }
-  if (file.type === "application/pdf") {
-    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-    const pages: string[] = [];
-    for (let pageNumber = 1; pageNumber <= Math.min(pdf.numPages, 80); pageNumber += 1) {
-      const page = await pdf.getPage(pageNumber);
-      const text = await page.getTextContent();
-      pages.push(text.items.map((item: any) => item.str).join(" "));
-    }
-    return pages.join("\n\n").slice(0, 60000);
-  }
-  if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-    return result.value.slice(0, 60000);
-  }
-  return "";
 };
 
 const DraftEditor = () => {
@@ -75,6 +53,24 @@ const DraftEditor = () => {
       const { data } = await supabase.from("drafts").select("*").eq("id", id).maybeSingle();
       setDraft(data);
       setRisks(((data?.risk_flags as any) ?? []) as Risk[]);
+
+      // If created from a Litigation Intel result, pre-seed the chat with a draft prompt
+      const ctx = (data?.inputs as any)?.case_context;
+      if (ctx && !(data?.inputs as any)?.intake_used) {
+        const briefPreview = String(ctx.brief ?? "").slice(0, 1800);
+        const ref = ctx.cnr ? `CNR ${ctx.cnr}` : (ctx.query ?? "case");
+        setInput(
+          `Draft a ${TEMPLATES.find(t => t.key === data.template)?.label ?? data.template} based on this case context.\n\n` +
+          `Reference: ${ref}\n\n` +
+          `Case brief:\n${briefPreview}\n\n` +
+          `Use the cited precedents below where relevant. Tailor to Indian court formatting and include a prayer/relief section.`
+        );
+        // mark consumed so we don't re-seed on every load
+        await supabase.from("drafts")
+          .update({ inputs: { ...(data.inputs as any ?? {}), intake_used: true } as any })
+          .eq("id", id!);
+      }
+
       const { data: files } = await (supabase as any)
         .from("draft_attachments")
         .select("id,file_name,storage_path,mime_type,file_size,status,error_message")
@@ -148,7 +144,10 @@ const DraftEditor = () => {
 
     setUploading(true);
     try {
-      const extractedText = await extractTextFromFile(file);
+      const extractedText = await extractTextFromFile(file, {
+        ocrFallback: true,
+        onProgress: (msg) => toast.info(msg),
+      });
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const storagePath = `${user.id}/${id}/${Date.now()}-${safeName}`;
       const { error: uploadError } = await supabase.storage.from("draft-documents").upload(storagePath, file, {
@@ -238,7 +237,7 @@ const DraftEditor = () => {
                   <div className="flex items-center gap-2 font-serif text-base font-semibold text-primary"><Paperclip className="h-4 w-4 text-accent" /> Source documents</div>
                   <p className="mt-1 text-sm text-muted-foreground">Upload contracts, notices, PDFs, or notes for AI drafting, review, redlines, and issue spotting.</p>
                 </div>
-                <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.md,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/rtf" onChange={uploadAttachment} />
+                <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/rtf,image/png,image/jpeg,image/webp" onChange={uploadAttachment} />
                 <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload
                 </Button>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { AppShell } from "@/components/AppShell";
 import { AiDisclaimer } from "@/components/AiDisclaimer";
@@ -9,15 +10,17 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Loader2, Sparkles, ExternalLink, Hash, Search, Upload, Bell, BellRing, Trash2,
-  Gavel, Calendar, ScrollText, ShieldAlert, ListChecks, Download,
+  Gavel, Calendar, ScrollText, ListChecks, Download, Layers, FileSignature, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { exportAiResultPdf } from "@/lib/exportPdf";
 
-type Mode = "cnr" | "keyword" | "document";
+type Mode = "cnr" | "keyword" | "document" | "batch";
 
 interface Precedent {
   tid: number;
@@ -60,7 +63,20 @@ const SAMPLES = {
   ],
 };
 
+interface BatchRow {
+  cnr: string;
+  status: "pending" | "running" | "done" | "error";
+  title?: string;
+  court?: string;
+  next_hearing?: string;
+  brief_excerpt?: string;
+  fraud_signal?: string;
+  error?: string;
+}
+
 const Litigation = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [mode, setMode] = useState<Mode>("cnr");
   const [cnr, setCnr] = useState("");
   const [query, setQuery] = useState("");
@@ -69,6 +85,10 @@ const Litigation = () => {
   const [intel, setIntel] = useState<IntelResponse | null>(null);
   const [watch, setWatch] = useState<WatchItem[]>([]);
   const [refreshing, setRefreshing] = useState<string | null>(null);
+  const [batchInput, setBatchInput] = useState("");
+  const [batchRows, setBatchRows] = useState<BatchRow[]>([]);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [creatingDraft, setCreatingDraft] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => { loadWatch(); }, []);
@@ -174,6 +194,108 @@ const Litigation = () => {
     reader.readAsText(file);
   }
 
+  // ----- Batch CNR intake (parallel, max concurrency 4) -----
+  function parseCnrs(raw: string): string[] {
+    return Array.from(
+      new Set(
+        raw
+          .split(/[\s,;\n\r]+/)
+          .map(s => s.trim().toUpperCase())
+          .filter(s => /^[A-Z]{4}\d{12}$/.test(s))
+      )
+    );
+  }
+
+  async function runBatch() {
+    const cnrs = parseCnrs(batchInput);
+    if (cnrs.length === 0) {
+      toast.error("Paste one CNR per line (16 chars: 4 letters + 12 digits).");
+      return;
+    }
+    if (cnrs.length > 50) {
+      toast.error("Limit 50 CNRs per batch. Split into smaller runs.");
+      return;
+    }
+    const initial: BatchRow[] = cnrs.map(c => ({ cnr: c, status: "pending" }));
+    setBatchRows(initial);
+    setBatchRunning(true);
+
+    const CONCURRENCY = 4;
+    let cursor = 0;
+    const next = (): number => cursor++;
+
+    async function worker() {
+      while (true) {
+        const i = next();
+        if (i >= cnrs.length) return;
+        const cnr = cnrs[i];
+        setBatchRows(rows => rows.map((r, idx) => idx === i ? { ...r, status: "running" } : r));
+        try {
+          const { data, error } = await supabase.functions.invoke("litigation-intel", {
+            body: { mode: "cnr", cnr },
+          });
+          if (error) throw error;
+          if ((data as any)?.error) throw new Error((data as any).error);
+          const d = data as IntelResponse;
+          const c = (d.court_data as any)?.case ?? d.court_data ?? {};
+          const fraudMatch = /Fraud & predatory signals:\s*([^\n]+)/i.exec(d.brief ?? "");
+          setBatchRows(rows => rows.map((r, idx) => idx === i ? {
+            ...r,
+            status: "done",
+            title: c.title ?? c.case_title ?? `CNR ${cnr}`,
+            court: c.court_name ?? c.court ?? c.bench ?? "",
+            next_hearing: c.next_hearing_date ?? c.nextHearing ?? c.next_date ?? "",
+            brief_excerpt: (d.brief ?? "").slice(0, 240),
+            fraud_signal: fraudMatch ? fraudMatch[1].trim() : undefined,
+          } : r));
+        } catch (e: any) {
+          setBatchRows(rows => rows.map((r, idx) => idx === i ? {
+            ...r, status: "error", error: e?.message ?? "failed",
+          } : r));
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, cnrs.length) }, worker));
+    setBatchRunning(false);
+    toast.success(`Batch complete · ${cnrs.length} CNR${cnrs.length === 1 ? "" : "s"}`);
+  }
+
+  // ----- Auto-draft Reply / Written Statement from current intel -----
+  async function draftReplyFromIntel() {
+    if (!intel || !user) return;
+    setCreatingDraft(true);
+    try {
+      const ref = intel.mode === "cnr" ? cnr.toUpperCase() : (query || intel.query);
+      const title = `Reply — ${heading}`.slice(0, 120);
+      const { data, error } = await supabase.from("drafts").insert({
+        user_id: user.id,
+        template: "reply_notice",
+        title,
+        content: "",
+        inputs: {
+          case_context: {
+            cnr: intel.mode === "cnr" ? cnr.toUpperCase() : null,
+            query: intel.mode !== "cnr" ? ref : null,
+            heading,
+            brief: intel.brief,
+            precedents: intel.precedents.map((p, i) => ({
+              n: i + 1, title: p.title, source: p.source, date: p.date, url: p.url,
+            })),
+            court_data: intel.court_data ?? null,
+          },
+        } as any,
+      }).select("id").single();
+      if (error) throw error;
+      toast.success("Draft created with case context");
+      navigate(`/app/drafts/${data.id}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not create draft");
+    } finally {
+      setCreatingDraft(false);
+    }
+  }
+
   const heading = useMemo(() => {
     if (intel?.court_data?.case?.title) return intel.court_data.case.title;
     if (intel?.mode === "cnr") return `CNR ${cnr.toUpperCase()}`;
@@ -198,10 +320,11 @@ const Litigation = () => {
           <div className="space-y-6">
             <Card className="p-5">
               <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="cnr"><Hash className="mr-2 h-4 w-4" /> CNR</TabsTrigger>
                   <TabsTrigger value="keyword"><Search className="mr-2 h-4 w-4" /> Issue</TabsTrigger>
                   <TabsTrigger value="document"><Upload className="mr-2 h-4 w-4" /> Document</TabsTrigger>
+                  <TabsTrigger value="batch"><Layers className="mr-2 h-4 w-4" /> Batch</TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -247,31 +370,58 @@ const Litigation = () => {
                 </div>
               )}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(SAMPLES[mode] as string[]).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => {
-                      if (mode === "cnr") setCnr(s);
-                      else if (mode === "keyword") setQuery(s);
-                      else setDocumentText(s);
-                    }}
-                    className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-accent/10 hover:text-foreground"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
+              {mode === "batch" && (
+                <div className="mt-4 space-y-3">
+                  <Textarea
+                    placeholder={"Paste up to 50 CNRs (one per line, comma or space separated)\nDLCT010012342024\nMHCT020045672023"}
+                    value={batchInput}
+                    onChange={(e) => setBatchInput(e.target.value)}
+                    className="min-h-[140px] font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Runs Litigation Intel on each CNR in parallel (concurrency 4). Use this for high-volume defence portfolios.
+                  </p>
+                </div>
+              )}
+
+              {mode !== "batch" && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {(SAMPLES[mode] as string[]).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        if (mode === "cnr") setCnr(s);
+                        else if (mode === "keyword") setQuery(s);
+                        else setDocumentText(s);
+                      }}
+                      className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-4 flex items-center justify-between">
                 <AiDisclaimer />
-                <Button onClick={runIntel} disabled={loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Run Intelligence
-                </Button>
+                {mode === "batch" ? (
+                  <Button onClick={runBatch} disabled={batchRunning}>
+                    {batchRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Layers className="mr-2 h-4 w-4" />}
+                    Run Batch
+                  </Button>
+                ) : (
+                  <Button onClick={runIntel} disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Run Intelligence
+                  </Button>
+                )}
               </div>
             </Card>
+
+            {mode === "batch" && batchRows.length > 0 && (
+              <BatchResults rows={batchRows} />
+            )}
 
             {intel && (
               <>
@@ -303,6 +453,10 @@ const Litigation = () => {
                         }
                       >
                         <Download className="mr-2 h-4 w-4" /> PDF
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={draftReplyFromIntel} disabled={creatingDraft}>
+                        {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
+                        Draft Reply
                       </Button>
                       <Button variant="outline" size="sm" onClick={trackCurrent}>
                         <Bell className="mr-2 h-4 w-4" /> Track
@@ -428,6 +582,49 @@ function CourtSummary({ data }: { data: any }) {
         );
       })}
     </div>
+  );
+}
+
+function BatchResults({ rows }: { rows: BatchRow[] }) {
+  const done = rows.filter(r => r.status === "done").length;
+  const errored = rows.filter(r => r.status === "error").length;
+  const pct = Math.round(((done + errored) / rows.length) * 100);
+  return (
+    <Card className="p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Batch results</p>
+          <p className="text-sm text-foreground">{done} done · {errored} failed · {rows.length} total</p>
+        </div>
+        <Badge variant="outline">{pct}%</Badge>
+      </div>
+      <Progress value={pct} className="mb-4 h-1.5" />
+      <div className="space-y-2">
+        {rows.map((r) => (
+          <div key={r.cnr} className="rounded-lg border border-border bg-card p-3 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  {r.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
+                  {r.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+                  {r.status === "running" && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+                  {r.status === "pending" && <span className="h-3.5 w-3.5 rounded-full border border-border" />}
+                  <span className="font-mono text-xs">{r.cnr}</span>
+                </div>
+                {r.title && <p className="mt-1 truncate font-medium text-primary">{r.title}</p>}
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {r.court ?? ""}{r.next_hearing ? ` · Next: ${r.next_hearing}` : ""}
+                </p>
+                {r.fraud_signal && r.fraud_signal.toLowerCase() !== "none observed in the available record." && (
+                  <p className="mt-1 text-xs text-destructive">⚑ {r.fraud_signal}</p>
+                )}
+                {r.error && <p className="mt-1 text-xs text-destructive">{r.error}</p>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 
