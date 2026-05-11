@@ -585,4 +585,47 @@ function CourtSummary({ data }: { data: any }) {
   );
 }
 
+function BatchResults({ rows }: { rows: BatchRow[] }) {
+  const done = rows.filter(r => r.status === "done").length;
+  const errored = rows.filter(r => r.status === "error").length;
+  const pct = Math.round(((done + errored) / rows.length) * 100);
+  return (
+    <Card className="p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Batch results</p>
+          <p className="text-sm text-foreground">{done} done · {errored} failed · {rows.length} total</p>
+        </div>
+        <Badge variant="outline">{pct}%</Badge>
+      </div>
+      <Progress value={pct} className="mb-4 h-1.5" />
+      <div className="space-y-2">
+        {rows.map((r) => (
+          <div key={r.cnr} className="rounded-lg border border-border bg-card p-3 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  {r.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
+                  {r.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+                  {r.status === "running" && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+                  {r.status === "pending" && <span className="h-3.5 w-3.5 rounded-full border border-border" />}
+                  <span className="font-mono text-xs">{r.cnr}</span>
+                </div>
+                {r.title && <p className="mt-1 truncate font-medium text-primary">{r.title}</p>}
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {r.court ?? ""}{r.next_hearing ? ` · Next: ${r.next_hearing}` : ""}
+                </p>
+                {r.fraud_signal && r.fraud_signal.toLowerCase() !== "none observed in the available record." && (
+                  <p className="mt-1 text-xs text-destructive">⚑ {r.fraud_signal}</p>
+                )}
+                {r.error && <p className="mt-1 text-xs text-destructive">{r.error}</p>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export default Litigation;
