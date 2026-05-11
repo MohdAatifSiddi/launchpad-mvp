@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { AppShell } from "@/components/AppShell";
 import { AiDisclaimer } from "@/components/AiDisclaimer";
@@ -9,15 +10,17 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Loader2, Sparkles, ExternalLink, Hash, Search, Upload, Bell, BellRing, Trash2,
-  Gavel, Calendar, ScrollText, ShieldAlert, ListChecks, Download,
+  Gavel, Calendar, ScrollText, ListChecks, Download, Layers, FileSignature, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { exportAiResultPdf } from "@/lib/exportPdf";
 
-type Mode = "cnr" | "keyword" | "document";
+type Mode = "cnr" | "keyword" | "document" | "batch";
 
 interface Precedent {
   tid: number;
