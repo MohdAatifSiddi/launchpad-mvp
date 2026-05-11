@@ -126,7 +126,10 @@ const DraftEditor = () => {
 
     setUploading(true);
     try {
-      const extractedText = await extractTextFromFile(file);
+      const extractedText = await extractTextFromFile(file, {
+        ocrFallback: true,
+        onProgress: (msg) => toast.info(msg),
+      });
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const storagePath = `${user.id}/${id}/${Date.now()}-${safeName}`;
       const { error: uploadError } = await supabase.storage.from("draft-documents").upload(storagePath, file, {
