@@ -53,6 +53,24 @@ const DraftEditor = () => {
       const { data } = await supabase.from("drafts").select("*").eq("id", id).maybeSingle();
       setDraft(data);
       setRisks(((data?.risk_flags as any) ?? []) as Risk[]);
+
+      // If created from a Litigation Intel result, pre-seed the chat with a draft prompt
+      const ctx = (data?.inputs as any)?.case_context;
+      if (ctx && !(data?.inputs as any)?.intake_used) {
+        const briefPreview = String(ctx.brief ?? "").slice(0, 1800);
+        const ref = ctx.cnr ? `CNR ${ctx.cnr}` : (ctx.query ?? "case");
+        setInput(
+          `Draft a ${TEMPLATES.find(t => t.key === data.template)?.label ?? data.template} based on this case context.\n\n` +
+          `Reference: ${ref}\n\n` +
+          `Case brief:\n${briefPreview}\n\n` +
+          `Use the cited precedents below where relevant. Tailor to Indian court formatting and include a prayer/relief section.`
+        );
+        // mark consumed so we don't re-seed on every load
+        await supabase.from("drafts")
+          .update({ inputs: { ...(data.inputs as any ?? {}), intake_used: true } as any })
+          .eq("id", id!);
+      }
+
       const { data: files } = await (supabase as any)
         .from("draft_attachments")
         .select("id,file_name,storage_path,mime_type,file_size,status,error_message")
