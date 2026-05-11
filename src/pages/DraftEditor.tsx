@@ -219,7 +219,7 @@ const DraftEditor = () => {
                   <div className="flex items-center gap-2 font-serif text-base font-semibold text-primary"><Paperclip className="h-4 w-4 text-accent" /> Source documents</div>
                   <p className="mt-1 text-sm text-muted-foreground">Upload contracts, notices, PDFs, or notes for AI drafting, review, redlines, and issue spotting.</p>
                 </div>
-                <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.md,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/rtf" onChange={uploadAttachment} />
+                <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/rtf,image/png,image/jpeg,image/webp" onChange={uploadAttachment} />
                 <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload
                 </Button>
