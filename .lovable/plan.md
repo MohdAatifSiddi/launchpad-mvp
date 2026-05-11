@@ -1,107 +1,84 @@
-# Diligence Module (Specter-style) — MVP for Weybre AI
 
-A new **Diligence** workspace where lawyers upload many documents, define a list of questions (a "playbook"), and get an AI-extracted answer + verbatim quote + page reference for every (document × question) cell. Designed for Indian M&A / contract review.
+# NyayAI Research MVP — Pre-Seed & First 100 Paying Lawyers
 
-This is a large feature; the MVP focuses on the matrix workflow end-to-end. Advanced items (real-time multiplayer cursors, anomaly detection, market benchmarking, fine-tuning) are explicitly out of scope for v1 and listed under "Later".
+## Beachhead
+**AI-powered case-law research for solo lawyers + small firms (1–10) in India.** Paid-only from day one. Indian Supreme Court corpus (your uploaded ~18K judgments) powers semantic search, AI answers with citations, and grounds a lightweight drafting assist.
 
----
+## Core User Flow
+1. Lawyer lands on marketing page → "Start 7-day paid trial — ₹999/month" → Razorpay checkout (card required).
+2. Onboarding: name, firm, practice areas, bar council number (for trust + future BCI compliance).
+3. **Research workspace** opens — the heart of the product.
 
-## User flow
+## Feature Set (MVP)
 
-1. **Diligence Rooms** list (`/app/diligence`) — create a Room (e.g. "Project Phoenix — Target NDA review").
-2. Inside a Room (`/app/diligence/:id`):
-   - **Documents** panel: drag-drop PDFs / DOCX / TXT (uses existing extractor logic from DraftEditor). Each doc shows status: `uploading → parsing → ready`.
-   - **Playbook** panel: add questions manually or pick a template (NDA, Lease, SPA, Employment, Vendor MSA — Indian-law slanted).
-   - **Run** button: enqueues one extraction job per (doc × question) cell.
-   - **Grid** (the centerpiece): rows = documents, cols = questions. Each cell streams from `pending → running → done|error` and shows the answer.
-   - **Side panel** (right): click a cell → verbatim quote, page number, confidence, source doc name. "Open document" jumps to the parsed text with the snippet highlighted.
-   - **Export**: CSV of the matrix; PDF summary using existing `exportPdf.ts`.
+### 1. Research Workspace (primary surface)
+- **Ask in plain English/Hindi**: "Find SC judgments where specific performance was denied due to delay" → AI answer with cited cases, reasoning, and direct quotes.
+- **Semantic + keyword hybrid search** over the Indian SC corpus (embeddings + Postgres full-text).
+- **Case detail view**: title, date, bench, judges, disposal, AI-generated summary, "issues for consideration", related judgments.
+- **Save to Matter**: organize cases into named matters/research folders.
+- **Export**: copy citation, export research note as PDF/DOCX with proper Indian citation format (e.g., 2023 INSC 1043).
+- **Streaming AI answers** with visible "Reasoning…" state and inline citation chips that scroll to the source.
 
----
+### 2. Draft Assist (lean, grounded in case law)
+- 6 starter templates: NDA, Employment Agreement, Service Agreement, Legal Notice, Reply Notice, Vakalatnama.
+- Chat-driven drafting: AI asks for parties, jurisdiction, key terms, then generates a clause-by-clause draft.
+- **Risk flags**: each clause shows a confidence chip + plain-English risk note.
+- **"Cite a precedent"**: pulls relevant SC judgments from the corpus to support specific clauses.
+- Export to DOCX / PDF.
 
-## Architecture (mapped to Lovable Cloud)
+### 3. Matters (light workspace)
+- Create matters → attach research notes, drafts, uploaded reference PDFs.
+- Single-user only in MVP (team seats = v2).
 
-Specter spec → what we actually use:
+### 4. Account & Billing
+- Razorpay subscription (₹999/mo Solo, ₹2,499/mo Firm-3 seats) — paid trial, card required at signup.
+- Usage meter: queries/month, drafts/month, with soft caps and clear upgrade nudge.
+- Invoice download (GST-compliant), cancel/upgrade self-serve.
 
-| Specter | Weybre MVP |
-|---|---|
-| API Gateway + SQS queues | Edge functions + Postgres job rows polled by a worker function |
-| OCR / parse | Existing client-side pdfjs + mammoth (reuse from DraftEditor); store extracted text per doc |
-| Vector DB (Qdrant) | Postgres `pgvector` (already enabled — used by `judgments`) |
-| GPT-4o primary, Claude fallback | Lovable AI Gateway: `google/gemini-2.5-pro` primary, `openai/gpt-5-mini` fallback |
-| WebSocket bus | Supabase Realtime on the `diligence_cells` table |
-| TanStack Virtual grid | Same — `@tanstack/react-virtual` for rows |
-| Jotai atomFamily | Keep it simple: Zustand-free, just Realtime → React state. Add Jotai only if perf demands it. |
-| RLS multi-tenant | Standard `auth.uid() = user_id` policies (matches rest of app) |
+### 5. Marketing Landing Page
+- Hero: "Turn 8 hours of legal research into 8 minutes."
+- Live demo video, "Built for Indian Law" trust strip (SC + 25 HCs roadmap), founder note, pricing, FAQ, BCI/UPL disclaimer ("AI co-counsel — not a substitute for legal advice"), DPDP-compliance badge (data hosted in India).
+- Single CTA everywhere: **Start paid trial**.
 
-Async boundary: the "Run" button writes N `pending` cell rows then invokes a `diligence-run` edge function that fans out extraction in batches (≤ 8 concurrent LLM calls per invocation, looped). Each cell is independently retryable; failures move to `error` with `error_message` and a "Retry" action.
+### 6. Trust & Compliance Layer
+- Visible "AI-generated, verify before filing" badge on every AI output.
+- Every cited case is clickable → source view (no hidden hallucinations).
+- DPDP-friendly: data residency note, delete-my-data button in settings.
+- Bar council number captured at signup (for future verification gating).
 
----
+## Design Direction
+- **Sober, premium, courtroom-credible** — not a flashy consumer app. Lawyers buy trust.
+- Deep navy + ivory base, single saffron/gold accent (subtle nod to India), serif for headings (authority), clean sans for body.
+- Devanagari "न्याय" mark in the logo lockup.
+- Dense-but-readable case cards, generous whitespace in research answers, monospace for citations.
+- Dark mode supported.
 
-## Database (single migration)
+## Tech & Data Plan (handled in build)
+- **Lovable Cloud** for auth (email + password + Google), Postgres, storage, edge functions.
+- **Lovable AI Gateway** for LLM (Gemini for fast research answers, GPT-5 for drafting) — streaming responses.
+- **Indian SC dataset** ingested into Postgres with `pgvector` embeddings; hybrid retrieval (vector + full-text) before LLM synthesis to minimize hallucination.
+- **Razorpay** for INR subscriptions (you'll add the API keys when we get there).
+- DOCX/PDF export via server-side generation.
+- Roles table (`user_roles`) from day 1 — admin vs lawyer — for future firm seats.
 
-```text
-diligence_rooms      (id, user_id, matter_id?, name, description, created_at, updated_at)
-diligence_documents  (id, room_id, user_id, file_name, storage_path, mime_type,
-                      file_size, extracted_text, page_count, status, error_message, created_at)
-diligence_questions  (id, room_id, user_id, position, label, prompt, expected_format, created_at)
-diligence_cells      (id, room_id, document_id, question_id, user_id,
-                      status('pending'|'running'|'done'|'error'),
-                      answer, verbatim_quote, page_ref, confidence,
-                      model, error_message, updated_at)
-                      UNIQUE (document_id, question_id)
-```
+## Out of Scope for MVP (deliberate)
+- High Court corpora (roadmap; SC-only at launch is honest and ships fast)
+- COMPLY module (RBI/SEBI tracker)
+- Team collaboration / multi-seat firm workspaces
+- Hindi/regional language UI (English UI; Hindi queries supported via LLM)
+- Mobile app (responsive web only)
 
-- Storage bucket `diligence-documents` (private), policies mirror `draft-documents`.
-- RLS: owner-only on all four tables (`auth.uid() = user_id`), plus admin override.
-- Realtime publication added on `diligence_cells` so the grid streams updates.
+## What Investors Will See in the Demo
+1. Lawyer asks a real Indian legal question → grounded, cited answer in <10s.
+2. One-click drafts an NDA with case-law-backed clauses.
+3. Razorpay dashboard showing real paying customers.
+4. Usage analytics: queries/lawyer/week (the retention metric).
 
----
-
-## Edge functions
-
-- **`diligence-run`** — input `{ room_id, cell_ids? }`. Loads doc text + question prompt, calls Gemini with a strict JSON schema `{ answer, verbatim_quote, page_ref, confidence }`, updates the cell. Includes a clause-aware chunker: splits doc into ~2k-token sections and asks the model to pick the most relevant section first (cheap mini model), then extract from that section only (keeps cost predictable).
-- **`diligence-export`** — returns CSV of the matrix.
-- Reuses existing `LOVABLE_API_KEY`. No new secrets.
-
----
-
-## Frontend
-
-New files:
-- `src/pages/Diligence.tsx` — rooms list.
-- `src/pages/DiligenceRoom.tsx` — main grid view (TanStack Virtual rows, sticky left col = doc name, sticky header = questions, click cell to open side panel).
-- `src/components/diligence/QuestionPlaybook.tsx` — add/edit/reorder questions; "Load template" dropdown (NDA / Lease / SPA / Employment / Vendor MSA).
-- `src/components/diligence/DocumentDropzone.tsx` — upload + parse + insert row.
-- `src/components/diligence/CellSidePanel.tsx` — verbatim, page, confidence, retry.
-- `src/lib/diligenceTemplates.ts` — built-in question packs.
-- Route added to `App.tsx`; nav link added in `AppShell`.
-
-Reuses: existing `extractTextFromFile` (lift from `DraftEditor.tsx` into `src/lib/docExtract.ts`), `AiDisclaimer`, `exportAiResultPdf`.
-
-Design tokens only (navy/ivory/saffron, Fraunces headings) — no raw colors.
-
----
-
-## Out of scope (Later)
-
-- Real-time presence cursors / comments per cell
-- Cross-doc agentic reasoning (deal-level questions)
-- Anomaly detection vs. corpus, market benchmarking
-- Fine-tuning from corrections
-- Air-gapped / on-prem LLM option
-- DLQ + multi-provider auto-failover beyond single fallback model
-
----
-
-## Build order
-
-1. Migration (tables + storage bucket + RLS + realtime publication). **Approval gate.**
-2. `diligence-run` and `diligence-export` edge functions.
-3. Lift `extractTextFromFile` into shared lib.
-4. `Diligence` rooms list + create flow.
-5. `DiligenceRoom` with upload + playbook + virtualized grid + Realtime subscription.
-6. Side panel + retry + CSV/PDF export.
-7. Add nav entry + route guards.
-
-Ship in that order; each step is independently testable.
+## Build Order
+1. Auth, roles, billing-gated routing, landing page, Razorpay paid-trial signup.
+2. Ingest SC dataset → embeddings → hybrid search API.
+3. Research workspace (search → AI answer with citations → save to matter).
+4. Matters + export to PDF/DOCX.
+5. Draft Assist (6 templates, chat flow, risk flags, citation grounding).
+6. Usage metering, invoices, settings, DPDP delete-my-data.
+7. Polish, empty states, error states, analytics events for funnel.
