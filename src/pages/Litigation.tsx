@@ -454,6 +454,10 @@ const Litigation = () => {
                       >
                         <Download className="mr-2 h-4 w-4" /> PDF
                       </Button>
+                      <Button variant="outline" size="sm" onClick={draftReplyFromIntel} disabled={creatingDraft}>
+                        {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
+                        Draft Reply
+                      </Button>
                       <Button variant="outline" size="sm" onClick={trackCurrent}>
                         <Bell className="mr-2 h-4 w-4" /> Track
                       </Button>
