@@ -9,8 +9,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Sparkles, BookOpen, Save, Loader2, ArrowUp, Globe, Scale, ExternalLink, Search, Download } from "lucide-react";
+import { Sparkles, BookOpen, Save, Loader2, ArrowUp, Globe, Scale, ExternalLink, Search, Download, Paperclip, X, FileText } from "lucide-react";
 import { exportAiResultPdf } from "@/lib/exportPdf";
+import { extractTextFromFile } from "@/lib/extractText";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -84,6 +85,48 @@ const Research = () => {
   const [newMatterName, setNewMatterName] = useState("");
   const [saving, setSaving] = useState(false);
   const answerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  type Attachment = { id: string; name: string; size: number; status: "extracting" | "ready" | "error"; text: string; error?: string };
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+
+  const ALLOWED_RESEARCH_TYPES = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain", "text/markdown", "application/rtf",
+    "image/png", "image/jpeg", "image/jpg", "image/webp",
+  ];
+  const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+  const handleAttachClick = () => fileInputRef.current?.click();
+
+  const handleFilesSelected = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const incoming = Array.from(files).slice(0, 5);
+    for (const f of incoming) {
+      if (!ALLOWED_RESEARCH_TYPES.includes(f.type)) {
+        toast.error(`Unsupported file: ${f.name}`, { description: "PDF, DOCX, TXT, or image only." });
+        continue;
+      }
+      if (f.size > MAX_FILE_BYTES) {
+        toast.error(`Too large: ${f.name}`, { description: "Max 10MB per file." });
+        continue;
+      }
+      const id = crypto.randomUUID();
+      setAttachments(prev => [...prev, { id, name: f.name, size: f.size, status: "extracting", text: "" }]);
+      try {
+        const text = await extractTextFromFile(f, { ocrFallback: true });
+        if (!text.trim()) throw new Error("No readable text extracted");
+        setAttachments(prev => prev.map(a => a.id === id ? { ...a, status: "ready", text } : a));
+      } catch (e: any) {
+        setAttachments(prev => prev.map(a => a.id === id ? { ...a, status: "error", error: e?.message ?? "Extract failed" } : a));
+        toast.error(`Couldn't read ${f.name}`, { description: e?.message ?? "Try another file." });
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
 
   useEffect(() => {
     if (!user) return;
@@ -114,14 +157,17 @@ const Research = () => {
     setResultMode(activeMode);
 
     try {
+      const userContext = attachments
+        .filter(a => a.status === "ready" && a.text.trim().length > 0)
+        .map(a => ({ name: a.name, text: a.text }));
       if (activeMode === "case-law") {
-        const { data, error } = await supabase.functions.invoke("research", { body: { query: text } });
+        const { data, error } = await supabase.functions.invoke("research", { body: { query: text, userContext } });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         setAnswer(data.answer ?? "");
         setCitations(data.citations ?? []);
       } else {
-        const { data, error } = await supabase.functions.invoke("web-search", { body: { query: text } });
+        const { data, error } = await supabase.functions.invoke("web-search", { body: { query: text, userContext } });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         setAnswer(data.answer ?? "");
@@ -233,14 +279,72 @@ const Research = () => {
             className="min-h-[88px] resize-none border-0 bg-transparent p-0 text-base shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
             onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAsk(); }}
           />
-          <div className="mt-3 flex items-center justify-between">
-            <span className="px-section-label">
-              {mode === "web" ? <Globe className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
-              {mode === "web" ? "AI web search · cited live sources" : "Indian SC corpus · cited"}
-            </span>
+
+          {/* Attached docs */}
+          {attachments.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {attachments.map(a => (
+                <span
+                  key={a.id}
+                  className={`inline-flex max-w-[260px] items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                    a.status === "error"
+                      ? "border-destructive/40 bg-destructive/5 text-destructive"
+                      : "border-border bg-secondary text-foreground"
+                  }`}
+                  title={a.status === "error" ? a.error : a.name}
+                >
+                  {a.status === "extracting"
+                    ? <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent" />
+                    : <FileText className="h-3 w-3 shrink-0 text-accent" />}
+                  <span className="truncate">{a.name}</span>
+                  {a.status === "ready" && (
+                    <span className="font-mono text-[0.6rem] text-muted-foreground">
+                      {Math.max(1, Math.round(a.text.length / 1000))}k
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(a.id)}
+                    className="rounded-full p-0.5 text-muted-foreground hover:bg-background hover:text-foreground"
+                    aria-label={`Remove ${a.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg,.webp"
+                className="hidden"
+                onChange={e => handleFilesSelected(e.target.files)}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={handleAttachClick}
+                className="h-8 gap-1.5 rounded-full px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                title="Attach your own documents (PDF, DOCX, image)"
+              >
+                <Paperclip className="h-3.5 w-3.5" /> Attach
+              </Button>
+              <span className="px-section-label truncate">
+                {mode === "web" ? <Globe className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+                {attachments.some(a => a.status === "ready")
+                  ? `Grounded on ${attachments.filter(a => a.status === "ready").length} document${attachments.filter(a => a.status === "ready").length === 1 ? "" : "s"}`
+                  : (mode === "web" ? "AI web search · cited live sources" : "Indian SC corpus · cited")}
+              </span>
+            </div>
             <Button
               onClick={() => handleAsk()}
-              disabled={loading || !query.trim()}
+              disabled={loading || !query.trim() || attachments.some(a => a.status === "extracting")}
               size="sm"
               className="rounded-full bg-primary px-4 hover:bg-primary-glow"
             >

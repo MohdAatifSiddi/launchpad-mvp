@@ -45,6 +45,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const query = typeof body.query === "string" ? body.query.trim() : "";
     if (query.length < 3) return json({ error: "Query must be at least 3 characters" }, 400);
+    const userDocs: Array<{ name: string; text: string }> = Array.isArray(body.userContext)
+      ? body.userContext
+          .filter((d: any) => d && typeof d.text === "string" && d.text.trim().length > 0)
+          .slice(0, 6)
+          .map((d: any) => ({ name: String(d.name ?? "User document").slice(0, 120), text: String(d.text).slice(0, 12000) }))
+      : [];
     if (!TAVILY_API_KEY) return json({ error: "Tavily API key is not configured" }, 500);
 
     const search = await fetch("https://api.tavily.com/search", {
@@ -115,7 +121,10 @@ Open with a 2-3 sentence direct answer. Continue with supporting detail in prose
 Hard rules: never invent facts, statutes or case names. Prefer authoritative Indian sources (.gov.in, .nic.in, SC/HC sites, BCI, MoL, LiveLaw, Bar & Bench, SCC Online). Indian vocabulary (Section, Article, lakh/crore). Don't give legal advice — frame as "according to [source]…". Maximum 300 words.`;
 
     const sourceContext = sources.map((s) => `[${s.n}] ${s.title}\nURL: ${s.url}\nSource: ${s.domain}\nExcerpt: ${s.snippet ?? ""}`).join("\n\n---\n\n");
-    const userPrompt = `QUESTION: ${query}\n\nREAL WEB SEARCH RESULTS FROM TAVILY:\n\n${sourceContext}\n\nAnswer using only these sources. Use [n] citations that match the numbered sources.`;
+    const userDocsBlock = userDocs.length
+      ? `\n\nUSER-PROVIDED DOCUMENTS (treat as authoritative background context — cite as [U1], [U2]… when used):\n\n${userDocs.map((d, i) => `[U${i + 1}] ${d.name}\n${d.text}`).join("\n\n---\n\n")}\n`
+      : "";
+    const userPrompt = `QUESTION: ${query}${userDocsBlock}\n\nREAL WEB SEARCH RESULTS FROM TAVILY:\n\n${sourceContext}\n\nGround the answer in the user's documents (when relevant) and the web sources. Use [n] for web sources and [U#] for user documents. Never invent sources.`;
 
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

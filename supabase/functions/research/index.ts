@@ -89,10 +89,16 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return json({ error: "Unauthorized" }, 401);
 
-    const { query, matter_id } = await req.json();
+    const { query, matter_id, userContext } = await req.json();
     if (!query || typeof query !== "string" || query.length < 3) {
       return json({ error: "Query must be at least 3 characters" }, 400);
     }
+    const userDocs: Array<{ name: string; text: string }> = Array.isArray(userContext)
+      ? userContext
+          .filter((d: any) => d && typeof d.text === "string" && d.text.trim().length > 0)
+          .slice(0, 6)
+          .map((d: any) => ({ name: String(d.name ?? "User document").slice(0, 120), text: String(d.text).slice(0, 12000) }))
+      : [];
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const queryEmbedding = zeroEmbedding();
@@ -266,7 +272,10 @@ Hard rules:
 - Don't give legal advice; frame as "the Supreme Court has held…".
 - Total length ≤ 450 words.`;
 
-    const userPrompt = `QUESTION: ${query}\n\nCONTEXT (ranked Indian precedents):\n\n${context}`;
+    const userDocsBlock = userDocs.length
+      ? `\n\nUSER-PROVIDED DOCUMENTS (treat as the user's own facts/briefs/exhibits — anchor analysis to these and cite as [U1], [U2]…):\n\n${userDocs.map((d, i) => `[U${i + 1}] ${d.name}\n${d.text}`).join("\n\n---\n\n")}\n`
+      : "";
+    const userPrompt = `QUESTION: ${query}${userDocsBlock}\n\nCONTEXT (ranked Indian precedents):\n\n${context}\n\nWhen user documents are provided, frame the answer around their facts, then map the precedents to those facts. Use [n] for precedents and [U#] for user documents.`;
 
     // ---------- 5. Synthesize ----------
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -313,7 +322,7 @@ Hard rules:
       user_id: user.id,
       event_type: "research_query",
       tokens: j.usage?.total_tokens ?? 0,
-      metadata: { query, matter_id, internal: internal.length, kanoon: ikDocs.length, ranked: ranked.length },
+      metadata: { query, matter_id, internal: internal.length, kanoon: ikDocs.length, ranked: ranked.length, user_docs: userDocs.length },
     });
 
     return json({ answer, citations });
