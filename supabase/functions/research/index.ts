@@ -272,7 +272,10 @@ Hard rules:
 - Don't give legal advice; frame as "the Supreme Court has held…".
 - Total length ≤ 450 words.`;
 
-    const userPrompt = `QUESTION: ${query}\n\nCONTEXT (ranked Indian precedents):\n\n${context}`;
+    const userDocsBlock = userDocs.length
+      ? `\n\nUSER-PROVIDED DOCUMENTS (treat as the user's own facts/briefs/exhibits — anchor analysis to these and cite as [U1], [U2]…):\n\n${userDocs.map((d, i) => `[U${i + 1}] ${d.name}\n${d.text}`).join("\n\n---\n\n")}\n`
+      : "";
+    const userPrompt = `QUESTION: ${query}${userDocsBlock}\n\nCONTEXT (ranked Indian precedents):\n\n${context}\n\nWhen user documents are provided, frame the answer around their facts, then map the precedents to those facts. Use [n] for precedents and [U#] for user documents.`;
 
     // ---------- 5. Synthesize ----------
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
