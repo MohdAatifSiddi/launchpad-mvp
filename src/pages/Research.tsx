@@ -85,6 +85,48 @@ const Research = () => {
   const [newMatterName, setNewMatterName] = useState("");
   const [saving, setSaving] = useState(false);
   const answerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  type Attachment = { id: string; name: string; size: number; status: "extracting" | "ready" | "error"; text: string; error?: string };
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+
+  const ALLOWED_RESEARCH_TYPES = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain", "text/markdown", "application/rtf",
+    "image/png", "image/jpeg", "image/jpg", "image/webp",
+  ];
+  const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+  const handleAttachClick = () => fileInputRef.current?.click();
+
+  const handleFilesSelected = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const incoming = Array.from(files).slice(0, 5);
+    for (const f of incoming) {
+      if (!ALLOWED_RESEARCH_TYPES.includes(f.type)) {
+        toast.error(`Unsupported file: ${f.name}`, { description: "PDF, DOCX, TXT, or image only." });
+        continue;
+      }
+      if (f.size > MAX_FILE_BYTES) {
+        toast.error(`Too large: ${f.name}`, { description: "Max 10MB per file." });
+        continue;
+      }
+      const id = crypto.randomUUID();
+      setAttachments(prev => [...prev, { id, name: f.name, size: f.size, status: "extracting", text: "" }]);
+      try {
+        const text = await extractTextFromFile(f, { ocrFallback: true });
+        if (!text.trim()) throw new Error("No readable text extracted");
+        setAttachments(prev => prev.map(a => a.id === id ? { ...a, status: "ready", text } : a));
+      } catch (e: any) {
+        setAttachments(prev => prev.map(a => a.id === id ? { ...a, status: "error", error: e?.message ?? "Extract failed" } : a));
+        toast.error(`Couldn't read ${f.name}`, { description: e?.message ?? "Try another file." });
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
 
   useEffect(() => {
     if (!user) return;
