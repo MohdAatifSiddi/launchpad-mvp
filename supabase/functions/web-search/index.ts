@@ -45,6 +45,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const query = typeof body.query === "string" ? body.query.trim() : "";
     if (query.length < 3) return json({ error: "Query must be at least 3 characters" }, 400);
+    const userDocs: Array<{ name: string; text: string }> = Array.isArray(body.userContext)
+      ? body.userContext
+          .filter((d: any) => d && typeof d.text === "string" && d.text.trim().length > 0)
+          .slice(0, 6)
+          .map((d: any) => ({ name: String(d.name ?? "User document").slice(0, 120), text: String(d.text).slice(0, 12000) }))
+      : [];
     if (!TAVILY_API_KEY) return json({ error: "Tavily API key is not configured" }, 500);
 
     const search = await fetch("https://api.tavily.com/search", {
