@@ -89,10 +89,16 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return json({ error: "Unauthorized" }, 401);
 
-    const { query, matter_id } = await req.json();
+    const { query, matter_id, userContext } = await req.json();
     if (!query || typeof query !== "string" || query.length < 3) {
       return json({ error: "Query must be at least 3 characters" }, 400);
     }
+    const userDocs: Array<{ name: string; text: string }> = Array.isArray(userContext)
+      ? userContext
+          .filter((d: any) => d && typeof d.text === "string" && d.text.trim().length > 0)
+          .slice(0, 6)
+          .map((d: any) => ({ name: String(d.name ?? "User document").slice(0, 120), text: String(d.text).slice(0, 12000) }))
+      : [];
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const queryEmbedding = zeroEmbedding();
