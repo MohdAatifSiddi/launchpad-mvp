@@ -322,7 +322,7 @@ Hard rules:
       user_id: user.id,
       event_type: "research_query",
       tokens: j.usage?.total_tokens ?? 0,
-      metadata: { query, matter_id, internal: internal.length, kanoon: ikDocs.length, ranked: ranked.length },
+      metadata: { query, matter_id, internal: internal.length, kanoon: ikDocs.length, ranked: ranked.length, user_docs: userDocs.length },
     });
 
     return json({ answer, citations });
