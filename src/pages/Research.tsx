@@ -279,14 +279,72 @@ const Research = () => {
             className="min-h-[88px] resize-none border-0 bg-transparent p-0 text-base shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
             onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAsk(); }}
           />
-          <div className="mt-3 flex items-center justify-between">
-            <span className="px-section-label">
-              {mode === "web" ? <Globe className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
-              {mode === "web" ? "AI web search · cited live sources" : "Indian SC corpus · cited"}
-            </span>
+
+          {/* Attached docs */}
+          {attachments.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {attachments.map(a => (
+                <span
+                  key={a.id}
+                  className={`inline-flex max-w-[260px] items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                    a.status === "error"
+                      ? "border-destructive/40 bg-destructive/5 text-destructive"
+                      : "border-border bg-secondary text-foreground"
+                  }`}
+                  title={a.status === "error" ? a.error : a.name}
+                >
+                  {a.status === "extracting"
+                    ? <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent" />
+                    : <FileText className="h-3 w-3 shrink-0 text-accent" />}
+                  <span className="truncate">{a.name}</span>
+                  {a.status === "ready" && (
+                    <span className="font-mono text-[0.6rem] text-muted-foreground">
+                      {Math.max(1, Math.round(a.text.length / 1000))}k
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(a.id)}
+                    className="rounded-full p-0.5 text-muted-foreground hover:bg-background hover:text-foreground"
+                    aria-label={`Remove ${a.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg,.webp"
+                className="hidden"
+                onChange={e => handleFilesSelected(e.target.files)}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={handleAttachClick}
+                className="h-8 gap-1.5 rounded-full px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                title="Attach your own documents (PDF, DOCX, image)"
+              >
+                <Paperclip className="h-3.5 w-3.5" /> Attach
+              </Button>
+              <span className="px-section-label truncate">
+                {mode === "web" ? <Globe className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+                {attachments.some(a => a.status === "ready")
+                  ? `Grounded on ${attachments.filter(a => a.status === "ready").length} document${attachments.filter(a => a.status === "ready").length === 1 ? "" : "s"}`
+                  : (mode === "web" ? "AI web search · cited live sources" : "Indian SC corpus · cited")}
+              </span>
+            </div>
             <Button
               onClick={() => handleAsk()}
-              disabled={loading || !query.trim()}
+              disabled={loading || !query.trim() || attachments.some(a => a.status === "extracting")}
               size="sm"
               className="rounded-full bg-primary px-4 hover:bg-primary-glow"
             >
