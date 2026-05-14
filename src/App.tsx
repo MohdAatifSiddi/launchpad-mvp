@@ -21,10 +21,13 @@ import DraftEditor from "./pages/DraftEditor.tsx";
 import Settings from "./pages/Settings.tsx";
 import Legal from "./pages/Legal.tsx";
 import Features from "./pages/Features.tsx";
+import Post from "./pages/Post.tsx";
 import AdminOverview from "./pages/admin/AdminOverview.tsx";
 import AdminCustomers from "./pages/admin/AdminCustomers.tsx";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions.tsx";
 import AdminPayments from "./pages/admin/AdminPayments.tsx";
+import AdminPages from "./pages/admin/AdminPages.tsx";
+import AdminPosts from "./pages/admin/AdminPosts.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
