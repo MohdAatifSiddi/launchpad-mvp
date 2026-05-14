@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CreditCard, Receipt, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Receipt, ArrowLeft, FileEdit, Newspaper } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,8 @@ const NAV = [
   { to: "/admin/customers", label: "Customers", icon: Users },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/admin/payments", label: "Payments", icon: Receipt },
+  { to: "/admin/pages", label: "Pages", icon: FileEdit },
+  { to: "/admin/posts", label: "Posts", icon: Newspaper },
 ];
 
 export const AdminShell = ({ children, title }: { children: ReactNode; title: string }) => {
