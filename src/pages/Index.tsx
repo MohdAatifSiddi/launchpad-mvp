@@ -283,7 +283,13 @@ const Index = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground md:justify-end">
+            <Link to="/features" className="hover:text-foreground">Features</Link>
             <Link to="/legal/about" className="hover:text-foreground">About</Link>
+            <Link to="/legal/trust" className="hover:text-foreground">Trust</Link>
+            <Link to="/legal/security-compliance" className="hover:text-foreground">Security & Compliance</Link>
+            <Link to="/legal/security-measures" className="hover:text-foreground">Security Measures</Link>
+            <Link to="/legal/newsroom" className="hover:text-foreground">Newsroom</Link>
+            <Link to="/legal/blog" className="hover:text-foreground">Perspectives</Link>
             <Link to="/legal/terms" className="hover:text-foreground">Terms</Link>
             <Link to="/legal/privacy" className="hover:text-foreground">Privacy</Link>
             <Link to="/legal/security" className="hover:text-foreground">Security</Link>
