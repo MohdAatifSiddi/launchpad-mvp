@@ -1,9 +1,14 @@
 import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Mail, MapPin } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const UPDATED = "26 April 2026";
+
+type Section = { h: string; p: string };
+type PageData = { title: string; intro: string; sections: readonly Section[] };
 
 const pages = {
   about: {
