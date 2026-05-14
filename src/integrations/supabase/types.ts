@@ -95,6 +95,81 @@ export type Database = {
         }
         Relationships: []
       }
+      cms_pages: {
+        Row: {
+          created_at: string
+          id: string
+          intro: string
+          sections: Json
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intro?: string
+          sections?: Json
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intro?: string
+          sections?: Json
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_posts: {
+        Row: {
+          author_name: string | null
+          body: string
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string
+          id: string
+          kind: string
+          published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          body?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string
+          id?: string
+          kind?: string
+          published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          body?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string
+          id?: string
+          kind?: string
+          published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       diligence_cells: {
         Row: {
           answer: string

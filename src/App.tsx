@@ -21,10 +21,13 @@ import DraftEditor from "./pages/DraftEditor.tsx";
 import Settings from "./pages/Settings.tsx";
 import Legal from "./pages/Legal.tsx";
 import Features from "./pages/Features.tsx";
+import Post from "./pages/Post.tsx";
 import AdminOverview from "./pages/admin/AdminOverview.tsx";
 import AdminCustomers from "./pages/admin/AdminCustomers.tsx";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions.tsx";
 import AdminPayments from "./pages/admin/AdminPayments.tsx";
+import AdminPages from "./pages/admin/AdminPages.tsx";
+import AdminPosts from "./pages/admin/AdminPosts.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -43,6 +46,7 @@ const App = () => (
             <Route path="/legal/:slug" element={<Legal />} />
             <Route path="/features" element={<Features />} />
             <Route path="/features/:slug" element={<Features />} />
+            <Route path="/posts/:slug" element={<Post />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/app/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
@@ -57,6 +61,8 @@ const App = () => (
             <Route path="/admin/customers" element={<ProtectedRoute><AdminRoute><AdminCustomers /></AdminRoute></ProtectedRoute>} />
             <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminRoute><AdminSubscriptions /></AdminRoute></ProtectedRoute>} />
             <Route path="/admin/payments" element={<ProtectedRoute><AdminRoute><AdminPayments /></AdminRoute></ProtectedRoute>} />
+            <Route path="/admin/pages" element={<ProtectedRoute><AdminRoute><AdminPages /></AdminRoute></ProtectedRoute>} />
+            <Route path="/admin/posts" element={<ProtectedRoute><AdminRoute><AdminPosts /></AdminRoute></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

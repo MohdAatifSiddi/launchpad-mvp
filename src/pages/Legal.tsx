@@ -1,9 +1,14 @@
 import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Mail, MapPin } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const UPDATED = "26 April 2026";
+
+type Section = { h: string; p: string };
+type PageData = { title: string; intro: string; sections: readonly Section[] };
 
 const pages = {
   about: {
@@ -139,8 +144,28 @@ const pages = {
 } as const;
 
 const Legal = () => {
-  const { slug = "about" } = useParams<{ slug: keyof typeof pages }>();
-  const page = pages[slug as keyof typeof pages] ?? pages.about;
+  const { slug = "about" } = useParams<{ slug: string }>();
+  const fallback = (pages as Record<string, PageData>)[slug] ?? pages.about;
+  const [page, setPage] = useState<PageData>(fallback);
+
+  useEffect(() => {
+    setPage((pages as Record<string, PageData>)[slug] ?? pages.about);
+    let cancel = false;
+    supabase
+      .from("cms_pages")
+      .select("title, intro, sections")
+      .eq("slug", slug)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancel || !data) return;
+        setPage({
+          title: data.title,
+          intro: data.intro,
+          sections: Array.isArray(data.sections) ? (data.sections as Section[]) : [],
+        });
+      });
+    return () => { cancel = true; };
+  }, [slug]);
 
   return (
     <div className="min-h-screen bg-hero">
@@ -162,6 +187,7 @@ const Legal = () => {
             </section>
           ))}
         </div>
+        {(slug === "blog" || slug === "newsroom") && <PostList kind={slug} />}
         {slug === "contact" && (
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-card p-5"><Mail className="mb-3 h-5 w-5 text-accent" /><p className="font-medium text-primary">support@weybre.ai</p></div>
@@ -169,6 +195,39 @@ const Legal = () => {
           </div>
         )}
       </main>
+    </div>
+  );
+};
+
+const PostList = ({ kind }: { kind: "blog" | "newsroom" }) => {
+  const [posts, setPosts] = useState<Array<{ slug: string; title: string; excerpt: string; published_at: string | null }>>([]);
+  useEffect(() => {
+    supabase
+      .from("cms_posts")
+      .select("slug, title, excerpt, published_at")
+      .eq("kind", kind)
+      .eq("published", true)
+      .order("published_at", { ascending: false })
+      .then(({ data }) => setPosts(data ?? []));
+  }, [kind]);
+  if (posts.length === 0) return null;
+  return (
+    <div className="mt-10 space-y-4">
+      {posts.map((post) => (
+        <Link
+          key={post.slug}
+          to={`/posts/${post.slug}`}
+          className="block rounded-xl border border-border bg-card p-6 transition-colors hover:border-accent"
+        >
+          {post.published_at && (
+            <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              {new Date(post.published_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+            </p>
+          )}
+          <h3 className="mt-2 font-serif text-xl text-primary">{post.title}</h3>
+          {post.excerpt && <p className="mt-2 text-sm text-muted-foreground">{post.excerpt}</p>}
+        </Link>
+      ))}
     </div>
   );
 };
