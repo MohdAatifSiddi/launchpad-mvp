@@ -8,11 +8,59 @@ const UPDATED = "26 April 2026";
 const pages = {
   about: {
     title: "About Weybre AI",
-    intro: "Weybre AI is a legal research and drafting productivity platform built for Indian advocates and law firms.",
+    intro: "Founded with the vision of making legal work faster, smarter, and more collaborative, Weybre AI is building AI-powered solutions designed for modern legal professionals.",
     sections: [
+      { h: "Our mission", p: "We combine technology, legal expertise, and innovation to simplify research, drafting, and workflow management for law firms, businesses, and in-house legal teams." },
       { h: "What we build", p: "The product helps legal professionals search Indian legal materials, review uploaded documents, create drafts, manage matters, and export work product. AI output is designed to assist legal work, not replace professional judgment." },
       { h: "Who it is for", p: "Weybre AI is intended for licensed advocates, law firms, in-house legal teams, and legal operations professionals. It is not intended to provide direct legal advice to the public." },
       { h: "Our standard", p: "We prioritize cited answers, document-grounded review, auditability, user-controlled data, and clear AI disclosures across research and drafting workflows." },
+    ],
+  },
+  "security-compliance": {
+    title: "Security & Compliance",
+    intro: "We are committed to maintaining high standards of security, privacy, and legal compliance for all client and platform data.",
+    sections: [
+      { h: "Current status", p: "As an early-stage company, we are actively implementing enterprise-grade security and compliance frameworks. Our roadmap includes alignment with internationally recognized standards such as ISO 27001, SOC 2, and GDPR-aligned requirements alongside India's DPDP Act." },
+      { h: "Encrypted data storage", p: "Customer data is encrypted in transit using TLS 1.2+ and at rest using AES-256 on managed cloud infrastructure." },
+      { h: "Restricted access controls", p: "Every record is scoped to the authenticated workspace through row-level security. Internal access is limited and reviewed." },
+      { h: "Monitoring and backups", p: "Automated backups, error monitoring, and server-side audit logs are in place for billing, usage, and admin actions." },
+      { h: "Confidential handling", p: "Matters, drafts, and uploaded documents stay private to your workspace. Provider keys are stored as server-side secrets only." },
+      { h: "Roadmap", p: "Formal third-party audits, penetration testing, and certifications are planned as we scale. We will publish reports here once completed — we do not claim certifications we do not yet hold." },
+    ],
+  },
+  trust: {
+    title: "Trust Center",
+    intro: "Our Trust Center is focused on transparency regarding our security practices and operational safeguards.",
+    sections: [
+      { h: "What is here today", p: "Plain-language descriptions of our current security measures, data handling, authentication model, and subprocessor list (available on request)." },
+      { h: "What is coming", p: "As we scale, this section will include security audit reports, compliance certifications, infrastructure status updates, formal incident response policies, and vendor and data processing information." },
+      { h: "Reporting a concern", p: "For security-related questions or responsible disclosure, contact security@weybre.ai. We acknowledge reports within 72 hours." },
+    ],
+  },
+  "security-measures": {
+    title: "Security Measures",
+    intro: "We use industry-standard practices to help protect customer data and platform integrity.",
+    sections: [
+      { h: "Encryption", p: "Encryption for data in transit (TLS 1.2+) and at rest (AES-256)." },
+      { h: "Cloud infrastructure", p: "Managed cloud hosting with isolated environments and least-privilege service accounts." },
+      { h: "Access control", p: "Authenticated workspaces, row-level security, and an explicit admin role table — no client-side role checks." },
+      { h: "Backups and monitoring", p: "Routine encrypted backups, error monitoring, and server-side audit logs for billing and admin events." },
+      { h: "Roadmap", p: "Additional enterprise-grade compliance work, third-party audits, and a formal penetration-testing program are planned as part of our growth roadmap." },
+    ],
+  },
+  newsroom: {
+    title: "Newsroom",
+    intro: "As a growing company, we are actively building partnerships, expanding our technology, and developing new capabilities.",
+    sections: [
+      { h: "Updates", p: "Major product updates, partnership announcements, and milestones will be shared here as they happen." },
+      { h: "Press contact", p: "For press, partnership, or media enquiries, write to press@weybre.ai." },
+    ],
+  },
+  blog: {
+    title: "Perspectives",
+    intro: "Our blog shares insights on legal technology, AI innovation, compliance trends, and practical guidance for legal professionals navigating the future of law.",
+    sections: [
+      { h: "Coming soon", p: "We are preparing our first set of essays on cited AI research workflows, precedent-grounded drafting, and DPDP-aligned legal data handling. Subscribe via support@weybre.ai to be notified at launch." },
     ],
   },
   terms: {
