@@ -187,6 +187,7 @@ const Legal = () => {
             </section>
           ))}
         </div>
+        {(slug === "blog" || slug === "newsroom") && <PostList kind={slug} />}
         {slug === "contact" && (
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-card p-5"><Mail className="mb-3 h-5 w-5 text-accent" /><p className="font-medium text-primary">support@weybre.ai</p></div>
@@ -194,6 +195,39 @@ const Legal = () => {
           </div>
         )}
       </main>
+    </div>
+  );
+};
+
+const PostList = ({ kind }: { kind: "blog" | "newsroom" }) => {
+  const [posts, setPosts] = useState<Array<{ slug: string; title: string; excerpt: string; published_at: string | null }>>([]);
+  useEffect(() => {
+    supabase
+      .from("cms_posts")
+      .select("slug, title, excerpt, published_at")
+      .eq("kind", kind)
+      .eq("published", true)
+      .order("published_at", { ascending: false })
+      .then(({ data }) => setPosts(data ?? []));
+  }, [kind]);
+  if (posts.length === 0) return null;
+  return (
+    <div className="mt-10 space-y-4">
+      {posts.map((post) => (
+        <Link
+          key={post.slug}
+          to={`/posts/${post.slug}`}
+          className="block rounded-xl border border-border bg-card p-6 transition-colors hover:border-accent"
+        >
+          {post.published_at && (
+            <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              {new Date(post.published_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+            </p>
+          )}
+          <h3 className="mt-2 font-serif text-xl text-primary">{post.title}</h3>
+          {post.excerpt && <p className="mt-2 text-sm text-muted-foreground">{post.excerpt}</p>}
+        </Link>
+      ))}
     </div>
   );
 };
