@@ -144,8 +144,28 @@ const pages = {
 } as const;
 
 const Legal = () => {
-  const { slug = "about" } = useParams<{ slug: keyof typeof pages }>();
-  const page = pages[slug as keyof typeof pages] ?? pages.about;
+  const { slug = "about" } = useParams<{ slug: string }>();
+  const fallback = (pages as Record<string, PageData>)[slug] ?? pages.about;
+  const [page, setPage] = useState<PageData>(fallback);
+
+  useEffect(() => {
+    setPage((pages as Record<string, PageData>)[slug] ?? pages.about);
+    let cancel = false;
+    supabase
+      .from("cms_pages")
+      .select("title, intro, sections")
+      .eq("slug", slug)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancel || !data) return;
+        setPage({
+          title: data.title,
+          intro: data.intro,
+          sections: Array.isArray(data.sections) ? (data.sections as Section[]) : [],
+        });
+      });
+    return () => { cancel = true; };
+  }, [slug]);
 
   return (
     <div className="min-h-screen bg-hero">
