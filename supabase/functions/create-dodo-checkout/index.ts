@@ -77,8 +77,6 @@ Deno.serve(async (req) => {
       return json({ error: "Dodo Payments did not return a checkout URL" }, 500);
     }
 
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 7);
     const { data: saved, error } = await admin
       .from("subscriptions")
       .upsert({
@@ -86,7 +84,7 @@ Deno.serve(async (req) => {
         plan,
         status: "incomplete",
         checkout_status: "created",
-        trial_end: trialEnd.toISOString(),
+        trial_end: null,
         dodo_subscription_id: session.subscription_id ?? null,
         dodo_customer_id: session.customer?.customer_id ?? null,
         cancelled_at: null,

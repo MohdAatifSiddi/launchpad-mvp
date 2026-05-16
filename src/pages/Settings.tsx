@@ -83,7 +83,6 @@ const Settings = () => {
           <div className="mt-3 flex items-center justify-between rounded-lg bg-accent-soft p-4">
             <div>
               <div className="flex items-center gap-2 font-medium text-primary"><ShieldCheck className="h-4 w-4" /> {sub?.plan ?? "—"} · {sub?.status ?? "—"}</div>
-              {sub?.trial_end && <p className="mt-1 text-xs text-muted-foreground">Trial ends {new Date(sub.trial_end).toLocaleDateString("en-IN")}</p>}
               {sub?.current_period_end && <p className="mt-1 text-xs text-muted-foreground">Renews {new Date(sub.current_period_end).toLocaleDateString("en-IN")}</p>}
             </div>
             <div className="flex flex-wrap gap-2">

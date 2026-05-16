@@ -65,7 +65,7 @@ const Auth = () => {
             {mode === "signup" ? "Open your Weybre AI workspace" : "Welcome back, Counsel"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {mode === "signup" ? "Card required at next step. 7 days. ₹999/month." : "Sign in to your research workspace."}
+            {mode === "signup" ? "Card required at next step. Subscribe to get started." : "Sign in to your research workspace."}
           </p>
 
           <Button onClick={handleGoogle} variant="outline" className="mt-8 w-full" disabled={loading}>
