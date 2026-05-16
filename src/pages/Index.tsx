@@ -284,6 +284,7 @@ const Index = () => {
             <Faq q="Which sources are covered?" a="Case law: full Supreme Court of India corpus (2000–present), with High Courts rolling out month-by-month. Web: live, cited search across legal news, government portals, journals and bare acts." />
             <Faq q="What about the Bar Council and UPL rules?" a="Weybre AI is a productivity tool for licensed advocates. We collect your Bar Council number at signup, and every output carries a clear AI-generated disclosure. Weybre AI does not provide legal advice or solicit work from the public." />
             <Faq q="Can I cancel anytime?" a="Yes. Self-serve cancellation in Settings. You keep access through the end of the billing period and can export your matters before leaving." />
+            <Faq q="Why should I start today?" a="Every week you wait, you're spending 30+ hours on work Weybre can do in 30 minutes — time you're not billing or winning cases. Our roadmap is also prioritised by early-user feedback, so founding firms shape the product they'll use for years." />
           </div>
         </div>
       </section>
