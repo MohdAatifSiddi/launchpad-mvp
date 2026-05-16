@@ -404,6 +404,20 @@ const PriceCard = ({ name, price, period, features, highlight }: { name: string;
   </div>
 );
 
+const Testimonial = ({ img, quote, name, role }: { img: string; quote: string; name: string; role: string }) => (
+  <div className="liquid-glass rounded-2xl p-7">
+    <Quote className="mb-4 h-5 w-5 text-foreground/70" />
+    <p style={serif} className="text-xl leading-snug text-foreground">"{quote}"</p>
+    <div className="mt-6 flex items-center gap-3">
+      <img src={img} alt={name} loading="lazy" className="h-11 w-11 rounded-full object-cover ring-1 ring-foreground/20" />
+      <div>
+        <p className="text-sm text-foreground">{name}</p>
+        <p className="text-xs text-muted-foreground">{role}</p>
+      </div>
+    </div>
+  </div>
+);
+
 const Faq = ({ q, a }: { q: string; a: string }) => (
   <div className="liquid-glass rounded-2xl p-6">
     <h4 style={serif} className="text-xl text-foreground">{q}</h4>
