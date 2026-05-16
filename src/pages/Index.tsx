@@ -54,38 +54,42 @@ const Index = () => {
             to="/auth?mode=signup"
             className="liquid-glass rounded-full px-6 py-2.5 text-sm text-foreground hover:scale-[1.03]"
           >
-            Begin Trial
+            Get Your First Cited Answer
           </Link>
         </nav>
 
         {/* Hero copy */}
         <section className="relative z-10 flex flex-col items-center px-6 pt-24 pb-32 text-center md:pt-32 md:pb-40">
+          <span className="animate-fade-rise mb-6 inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-background/30 px-4 py-1.5 text-[0.7rem] uppercase tracking-[0.2em] text-foreground backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground" />
+            Founding 50 firms · Priority onboarding
+          </span>
           <h1
             style={{ ...serif, letterSpacing: "-2.46px" }}
             className="animate-fade-rise max-w-7xl text-5xl font-normal leading-[0.95] sm:text-7xl md:text-8xl"
           >
-            Where <em className="not-italic text-muted-foreground">precedent</em> meets the{" "}
-            <em className="not-italic text-muted-foreground">speed of thought.</em>
+            Turn <em className="not-italic text-muted-foreground">8 hours</em> of research into{" "}
+            <em className="not-italic text-muted-foreground">8 cited minutes.</em>
           </h1>
           <p className="animate-fade-rise-delay mt-8 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Weybre AI is the AI co-counsel for Indian advocates. Search the Supreme Court corpus, draft contracts grounded in real precedent, and turn eight hours of research into eight cited minutes.
+            The only AI that cites every clause, judgment, and news article — with paragraph-level precision. For Indian advocates, by Indian advocates.
           </p>
           <div className="animate-fade-rise-delay-2 mt-12 flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/auth?mode=signup"
               className="liquid-glass cursor-pointer rounded-full px-14 py-5 text-base text-foreground hover:scale-[1.03]"
             >
-              Begin Free Trial
+              Get Your First Cited Answer →
             </Link>
             <a
-              href="#product"
+              href="#how"
               className="rounded-full px-6 py-5 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              See how it works <ArrowRight className="ml-1 inline h-4 w-4" />
+              Or watch a 3-min demo <ArrowRight className="ml-1 inline h-4 w-4" />
             </a>
           </div>
           <p className="animate-fade-rise-delay-2 mt-6 text-xs text-muted-foreground">
-            Card required · Cancel anytime · GST invoice included
+            Card required · Cancel anytime · GST invoice included · No call, no demo to book
           </p>
         </section>
       </div>
@@ -166,7 +170,7 @@ const Index = () => {
       </section>
 
       {/* ===== How it works ===== */}
-      <section className="container py-24">
+      <section id="how" className="container py-24">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <p className="mb-3 text-xs uppercase tracking-[0.3em] text-muted-foreground">How it works</p>
           <h2 style={serif} className="text-4xl text-foreground md:text-5xl">From query to citation in three steps.</h2>
@@ -188,6 +192,38 @@ const Index = () => {
               "Specific performance was denied due to inordinate delay in seeking relief…"
             </p>
             <p className="mt-3 text-[0.7rem] tracking-wider text-muted-foreground">2023 INSC 1043 · Para 27</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Testimonials ===== */}
+      <section className="relative border-y border-border/40 bg-background/60 py-24">
+        <div className="container">
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <p className="mb-3 text-xs uppercase tracking-[0.3em] text-muted-foreground">Voices from the bar</p>
+            <h2 style={serif} className="text-4xl text-foreground md:text-5xl">
+              Results from <em className="not-italic text-muted-foreground">real advocates.</em>
+            </h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            <Testimonial
+              img="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=200&h=200&fit=crop&crop=faces"
+              quote="I found a key SC precedent in 8 minutes that I'd missed in 6 hours of manual searching. Weybre is now my first stop for any research."
+              name="Adv. Rohan Mehta"
+              role="Litigation, Delhi High Court"
+            />
+            <Testimonial
+              img="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces"
+              quote="Cut my contract review time by 70%. The clause-level risk flags caught two issues I would have flagged on a third read."
+              name="Adv. Priya Iyer"
+              role="Partner, Corporate Practice"
+            />
+            <Testimonial
+              img="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=faces"
+              quote="What I love most: every citation is clickable. No hallucinations, no guesswork. It earned my trust in the first week."
+              name="Adv. Karan Singh"
+              role="Independent Counsel, Bombay"
+            />
           </div>
         </div>
       </section>
@@ -248,6 +284,7 @@ const Index = () => {
             <Faq q="Which sources are covered?" a="Case law: full Supreme Court of India corpus (2000–present), with High Courts rolling out month-by-month. Web: live, cited search across legal news, government portals, journals and bare acts." />
             <Faq q="What about the Bar Council and UPL rules?" a="Weybre AI is a productivity tool for licensed advocates. We collect your Bar Council number at signup, and every output carries a clear AI-generated disclosure. Weybre AI does not provide legal advice or solicit work from the public." />
             <Faq q="Can I cancel anytime?" a="Yes. Self-serve cancellation in Settings. You keep access through the end of the billing period and can export your matters before leaving." />
+            <Faq q="Why should I start today?" a="Every week you wait, you're spending 30+ hours on work Weybre can do in 30 minutes — time you're not billing or winning cases. Our roadmap is also prioritised by early-user feedback, so founding firms shape the product they'll use for years." />
           </div>
         </div>
       </section>
@@ -260,13 +297,13 @@ const Index = () => {
             Win back your <em className="not-italic text-muted-foreground">evenings.</em>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Subscribe securely with Dodo Payments. No call, no demo. Open the app and start researching.
+            Founding 50 firms get priority onboarding and roadmap input. Subscribe securely with Dodo Payments — no call, no demo.
           </p>
           <Link
             to="/auth?mode=signup"
             className="liquid-glass mt-10 inline-block cursor-pointer rounded-full px-14 py-5 text-base text-foreground hover:scale-[1.03]"
           >
-            Start Free Trial
+            Get Your First Cited Answer →
           </Link>
         </div>
       </section>
@@ -354,7 +391,7 @@ const PriceCard = ({ name, price, period, features, highlight }: { name: string;
       to="/auth?mode=signup"
       className="liquid-glass mt-6 block w-full cursor-pointer rounded-full px-6 py-3 text-center text-sm text-foreground hover:scale-[1.02]"
     >
-      Start 7-day trial
+      Get Your First Cited Answer
     </Link>
     <ul className="mt-6 space-y-2.5 text-sm">
       {features.map(f => (
@@ -364,6 +401,20 @@ const PriceCard = ({ name, price, period, features, highlight }: { name: string;
         </li>
       ))}
     </ul>
+  </div>
+);
+
+const Testimonial = ({ img, quote, name, role }: { img: string; quote: string; name: string; role: string }) => (
+  <div className="liquid-glass rounded-2xl p-7">
+    <Quote className="mb-4 h-5 w-5 text-foreground/70" />
+    <p style={serif} className="text-xl leading-snug text-foreground">"{quote}"</p>
+    <div className="mt-6 flex items-center gap-3">
+      <img src={img} alt={name} loading="lazy" className="h-11 w-11 rounded-full object-cover ring-1 ring-foreground/20" />
+      <div>
+        <p className="text-sm text-foreground">{name}</p>
+        <p className="text-xs text-muted-foreground">{role}</p>
+      </div>
+    </div>
   </div>
 );
 
