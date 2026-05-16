@@ -170,7 +170,7 @@ const Index = () => {
       </section>
 
       {/* ===== How it works ===== */}
-      <section className="container py-24">
+      <section id="how" className="container py-24">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <p className="mb-3 text-xs uppercase tracking-[0.3em] text-muted-foreground">How it works</p>
           <h2 style={serif} className="text-4xl text-foreground md:text-5xl">From query to citation in three steps.</h2>
