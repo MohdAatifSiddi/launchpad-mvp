@@ -80,13 +80,8 @@ export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?
           <div className="mb-3 rounded-md bg-sidebar-accent/60 p-3">
             <div className="flex items-center gap-2 text-xs font-medium text-sidebar-primary">
               <ShieldCheck className="h-3.5 w-3.5" />
-              {sub?.status === "trialing" ? "Trial active" : sub?.plan ? `${sub.plan} plan` : "No plan"}
+              {sub?.plan ? `${sub.plan} plan` : "No plan"}
             </div>
-            {sub?.trial_end && sub.status === "trialing" && (
-              <p className="mt-1 text-[0.7rem] text-sidebar-foreground/60">
-                Ends {new Date(sub.trial_end).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-              </p>
-            )}
           </div>
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">

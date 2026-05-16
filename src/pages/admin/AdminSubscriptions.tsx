@@ -13,7 +13,6 @@ type Row = {
   user_id: string;
   plan: string;
   status: string;
-  trial_end: string | null;
   current_period_end: string | null;
   dodo_subscription_id: string | null;
   full_name?: string | null;
@@ -25,7 +24,7 @@ const AdminSubscriptions = () => {
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
-    const { data: subs } = await supabase.from("subscriptions").select("id,user_id,plan,status,trial_end,current_period_end,dodo_subscription_id").order("status").limit(500);
+    const { data: subs } = await supabase.from("subscriptions").select("id,user_id,plan,status,current_period_end,dodo_subscription_id").order("status").limit(500);
     const ids = (subs ?? []).map((s) => s.user_id);
     const { data: profiles } = await supabase.from("profiles").select("id,full_name,firm_name").in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
     const pMap = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -58,7 +57,6 @@ const AdminSubscriptions = () => {
                 <TableHead>Customer</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Trial end</TableHead>
                 <TableHead>Period end</TableHead>
                 <TableHead>Dodo ID</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -73,11 +71,10 @@ const AdminSubscriptions = () => {
                   </TableCell>
                   <TableCell className="capitalize">{r.plan}</TableCell>
                   <TableCell><StatusBadge status={r.status} /></TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{r.trial_end ? new Date(r.trial_end).toLocaleDateString("en-IN") : "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{r.current_period_end ? new Date(r.current_period_end).toLocaleDateString("en-IN") : "—"}</TableCell>
                   <TableCell className="font-mono text-[0.7rem] text-muted-foreground">{r.dodo_subscription_id ?? "—"}</TableCell>
                   <TableCell className="text-right">
-                    {(r.status === "active" || r.status === "trialing") && r.dodo_subscription_id && (
+                    {r.status === "active" && r.dodo_subscription_id && (
                       <Button size="sm" variant="outline" disabled={busy === r.user_id} onClick={() => cancel(r.user_id)}>
                         {busy === r.user_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Cancel"}
                       </Button>

@@ -267,7 +267,7 @@ const Index = () => {
             />
           </div>
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Prices in INR, exclusive of GST. 7-day paid trial on all plans.
+            Prices in INR, exclusive of GST. Card required. Cancel anytime.
           </p>
         </div>
       </section>

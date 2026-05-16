@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Users, CreditCard, IndianRupee, TrendingUp } from "lucide-react";
 
 const AdminOverview = () => {
-  const [stats, setStats] = useState({ users: 0, active: 0, trialing: 0, mrr: 0, queries: 0, drafts: 0 });
+  const [stats, setStats] = useState({ users: 0, active: 0, mrr: 0, queries: 0, drafts: 0 });
 
   useEffect(() => {
     (async () => {
@@ -17,12 +17,11 @@ const AdminOverview = () => {
         supabase.from("drafts").select("*", { count: "exact", head: true }),
       ]);
       const active = subs?.filter((s) => s.status === "active").length ?? 0;
-      const trialing = subs?.filter((s) => s.status === "trialing").length ?? 0;
       const mrr = (subs ?? []).reduce((acc, s) => {
         if (s.status !== "active") return acc;
         return acc + (s.plan === "firm" ? 2499 : 999);
       }, 0);
-      setStats({ users: users ?? 0, active, trialing, mrr, queries: queries ?? 0, drafts: drafts ?? 0 });
+      setStats({ users: users ?? 0, active, mrr, queries: queries ?? 0, drafts: drafts ?? 0 });
     })();
   }, []);
 
@@ -30,7 +29,7 @@ const AdminOverview = () => {
     <AdminShell title="Overview">
       <div className="grid gap-4 md:grid-cols-4">
         <Stat icon={<Users className="h-4 w-4" />} label="Total customers" value={stats.users} />
-        <Stat icon={<CreditCard className="h-4 w-4" />} label="Active subs" value={stats.active} sub={`${stats.trialing} on trial`} />
+        <Stat icon={<CreditCard className="h-4 w-4" />} label="Active subs" value={stats.active} />
         <Stat icon={<IndianRupee className="h-4 w-4" />} label="MRR (active)" value={`₹${stats.mrr.toLocaleString("en-IN")}`} />
         <Stat icon={<TrendingUp className="h-4 w-4" />} label="Queries this month" value={stats.queries} sub={`${stats.drafts} total drafts`} />
       </div>

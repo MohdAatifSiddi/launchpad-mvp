@@ -12,7 +12,7 @@ const Pricing = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
 
-  const startTrial = async (plan: "solo" | "firm") => {
+  const startCheckout = async (plan: "solo" | "firm") => {
     if (!user) { navigate("/auth?mode=signup"); return; }
     setLoading(plan);
     try {
@@ -34,7 +34,7 @@ const Pricing = () => {
       <main className="container max-w-5xl py-10">
         <p className="text-center font-mono text-xs uppercase tracking-wider text-accent">Step 2 of 2 · Choose plan</p>
         <h1 className="mt-2 text-center font-serif text-3xl font-semibold text-primary md:text-4xl">
-          Start your 7-day paid trial
+          Subscribe to Weybre AI
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
           Secure subscription checkout via Dodo Payments. Cancel anytime in Settings.
@@ -46,9 +46,9 @@ const Pricing = () => {
             price="999"
             period="/lawyer / month"
             features={["Unlimited research queries", "20 contract drafts / month", "Save to matters & export PDF/DOCX", "GST-compliant invoices", "Email support"]}
-            cta="Start Solo trial"
+            cta="Subscribe to Solo"
             loading={loading === "solo"}
-            onClick={() => startTrial("solo")}
+            onClick={() => startCheckout("solo")}
           />
           <Plan
             name="Firm"
@@ -56,9 +56,9 @@ const Pricing = () => {
             price="2,499"
             period="/month · up to 3 seats"
             features={["Everything in Solo", "3 lawyer seats (v2)", "Unlimited drafts", "Priority support", "Roadmap: shared matters"]}
-            cta="Start Firm trial"
+            cta="Subscribe to Firm"
             loading={loading === "firm"}
-            onClick={() => startTrial("firm")}
+            onClick={() => startCheckout("firm")}
           />
         </div>
 
