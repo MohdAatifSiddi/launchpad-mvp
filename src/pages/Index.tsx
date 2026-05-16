@@ -297,13 +297,13 @@ const Index = () => {
             Win back your <em className="not-italic text-muted-foreground">evenings.</em>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Subscribe securely with Dodo Payments. No call, no demo. Open the app and start researching.
+            Founding 50 firms get priority onboarding and roadmap input. Subscribe securely with Dodo Payments — no call, no demo.
           </p>
           <Link
             to="/auth?mode=signup"
             className="liquid-glass mt-10 inline-block cursor-pointer rounded-full px-14 py-5 text-base text-foreground hover:scale-[1.03]"
           >
-            Start Free Trial
+            Get Your First Cited Answer →
           </Link>
         </div>
       </section>
