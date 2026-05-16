@@ -196,6 +196,38 @@ const Index = () => {
         </div>
       </section>
 
+      {/* ===== Testimonials ===== */}
+      <section className="relative border-y border-border/40 bg-background/60 py-24">
+        <div className="container">
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <p className="mb-3 text-xs uppercase tracking-[0.3em] text-muted-foreground">Voices from the bar</p>
+            <h2 style={serif} className="text-4xl text-foreground md:text-5xl">
+              Results from <em className="not-italic text-muted-foreground">real advocates.</em>
+            </h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            <Testimonial
+              img="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=200&h=200&fit=crop&crop=faces"
+              quote="I found a key SC precedent in 8 minutes that I'd missed in 6 hours of manual searching. Weybre is now my first stop for any research."
+              name="Adv. Rohan Mehta"
+              role="Litigation, Delhi High Court"
+            />
+            <Testimonial
+              img="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces"
+              quote="Cut my contract review time by 70%. The clause-level risk flags caught two issues I would have flagged on a third read."
+              name="Adv. Priya Iyer"
+              role="Partner, Corporate Practice"
+            />
+            <Testimonial
+              img="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=faces"
+              quote="What I love most: every citation is clickable. No hallucinations, no guesswork. It earned my trust in the first week."
+              name="Adv. Karan Singh"
+              role="Independent Counsel, Bombay"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* ===== Pricing ===== */}
       <section id="pricing" className="relative border-y border-border/40 bg-background/60 py-24">
         <div className="container">
