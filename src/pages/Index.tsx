@@ -54,38 +54,42 @@ const Index = () => {
             to="/auth?mode=signup"
             className="liquid-glass rounded-full px-6 py-2.5 text-sm text-foreground hover:scale-[1.03]"
           >
-            Begin Trial
+            Get Your First Cited Answer
           </Link>
         </nav>
 
         {/* Hero copy */}
         <section className="relative z-10 flex flex-col items-center px-6 pt-24 pb-32 text-center md:pt-32 md:pb-40">
+          <span className="animate-fade-rise mb-6 inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-background/30 px-4 py-1.5 text-[0.7rem] uppercase tracking-[0.2em] text-foreground backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground" />
+            Founding 50 firms · Priority onboarding
+          </span>
           <h1
             style={{ ...serif, letterSpacing: "-2.46px" }}
             className="animate-fade-rise max-w-7xl text-5xl font-normal leading-[0.95] sm:text-7xl md:text-8xl"
           >
-            Where <em className="not-italic text-muted-foreground">precedent</em> meets the{" "}
-            <em className="not-italic text-muted-foreground">speed of thought.</em>
+            Turn <em className="not-italic text-muted-foreground">8 hours</em> of research into{" "}
+            <em className="not-italic text-muted-foreground">8 cited minutes.</em>
           </h1>
           <p className="animate-fade-rise-delay mt-8 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Weybre AI is the AI co-counsel for Indian advocates. Search the Supreme Court corpus, draft contracts grounded in real precedent, and turn eight hours of research into eight cited minutes.
+            The only AI that cites every clause, judgment, and news article — with paragraph-level precision. For Indian advocates, by Indian advocates.
           </p>
           <div className="animate-fade-rise-delay-2 mt-12 flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/auth?mode=signup"
               className="liquid-glass cursor-pointer rounded-full px-14 py-5 text-base text-foreground hover:scale-[1.03]"
             >
-              Begin Free Trial
+              Get Your First Cited Answer →
             </Link>
             <a
-              href="#product"
+              href="#how"
               className="rounded-full px-6 py-5 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              See how it works <ArrowRight className="ml-1 inline h-4 w-4" />
+              Or watch a 3-min demo <ArrowRight className="ml-1 inline h-4 w-4" />
             </a>
           </div>
           <p className="animate-fade-rise-delay-2 mt-6 text-xs text-muted-foreground">
-            Card required · Cancel anytime · GST invoice included
+            Card required · Cancel anytime · GST invoice included · No call, no demo to book
           </p>
         </section>
       </div>
