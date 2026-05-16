@@ -391,7 +391,7 @@ const PriceCard = ({ name, price, period, features, highlight }: { name: string;
       to="/auth?mode=signup"
       className="liquid-glass mt-6 block w-full cursor-pointer rounded-full px-6 py-3 text-center text-sm text-foreground hover:scale-[1.02]"
     >
-      Start 7-day trial
+      Get Your First Cited Answer
     </Link>
     <ul className="mt-6 space-y-2.5 text-sm">
       {features.map(f => (
