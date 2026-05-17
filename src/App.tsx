@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Research from "./pages/Research.tsx";
 import Decide from "./pages/Decide.tsx";
 import Litigation from "./pages/Litigation.tsx";
+import Intake from "./pages/Intake.tsx";
 import Matters from "./pages/Matters.tsx";
 import MatterDetail from "./pages/MatterDetail.tsx";
 import Drafts from "./pages/Drafts.tsx";
