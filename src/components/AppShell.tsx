@@ -13,6 +13,7 @@ const NAV = [
   { to: "/app/research", label: "Research", icon: Search },
   { to: "/app/decide",   label: "Decision Engine", icon: Sparkles },
   { to: "/app/litigation", label: "Litigation Intel", icon: Gavel },
+  { to: "/app/intake",   label: "Contract Intake", icon: Inbox },
   { to: "/app/matters",  label: "Matters",  icon: FolderOpen },
   { to: "/app/drafts",   label: "Drafts",   icon: FileText },
   { to: "/app/settings", label: "Settings", icon: SettingsIcon },
