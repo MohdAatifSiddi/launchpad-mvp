@@ -170,6 +170,110 @@ export type Database = {
         }
         Relationships: []
       }
+      contracts: {
+        Row: {
+          char_count: number
+          created_at: string
+          doc_type: string | null
+          doc_type_confidence: number
+          effective_date: string | null
+          error_message: string | null
+          expiry_date: string | null
+          extracted_text: string
+          file_name: string
+          file_size: number
+          governing_law: string | null
+          human_label: string | null
+          human_reviewed_at: string | null
+          id: string
+          jurisdiction: string | null
+          matter_id: string | null
+          mime_type: string
+          model: string | null
+          needs_human_review: boolean
+          parse_method: string | null
+          parties: Json
+          renewal_window: string | null
+          risk_level: string | null
+          risk_reasons: Json
+          status: string
+          storage_path: string
+          termination_clause: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          char_count?: number
+          created_at?: string
+          doc_type?: string | null
+          doc_type_confidence?: number
+          effective_date?: string | null
+          error_message?: string | null
+          expiry_date?: string | null
+          extracted_text?: string
+          file_name: string
+          file_size?: number
+          governing_law?: string | null
+          human_label?: string | null
+          human_reviewed_at?: string | null
+          id?: string
+          jurisdiction?: string | null
+          matter_id?: string | null
+          mime_type: string
+          model?: string | null
+          needs_human_review?: boolean
+          parse_method?: string | null
+          parties?: Json
+          renewal_window?: string | null
+          risk_level?: string | null
+          risk_reasons?: Json
+          status?: string
+          storage_path: string
+          termination_clause?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          char_count?: number
+          created_at?: string
+          doc_type?: string | null
+          doc_type_confidence?: number
+          effective_date?: string | null
+          error_message?: string | null
+          expiry_date?: string | null
+          extracted_text?: string
+          file_name?: string
+          file_size?: number
+          governing_law?: string | null
+          human_label?: string | null
+          human_reviewed_at?: string | null
+          id?: string
+          jurisdiction?: string | null
+          matter_id?: string | null
+          mime_type?: string
+          model?: string | null
+          needs_human_review?: boolean
+          parse_method?: string | null
+          parties?: Json
+          renewal_window?: string | null
+          risk_level?: string | null
+          risk_reasons?: Json
+          status?: string
+          storage_path?: string
+          termination_clause?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_matter_id_fkey"
+            columns: ["matter_id"]
+            isOneToOne: false
+            referencedRelation: "matters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diligence_cells: {
         Row: {
           answer: string
