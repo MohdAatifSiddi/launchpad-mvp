@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
+import { useIsAdmin } from "./useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 
 export type SubStatus = "active" | "past_due" | "cancelled" | "incomplete";
