@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
+import { useIsAdmin } from "./useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 
 export type SubStatus = "active" | "past_due" | "cancelled" | "incomplete";
@@ -15,6 +16,7 @@ export interface Subscription {
 
 export const useSubscription = () => {
   const { user } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [sub, setSub] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,7 +34,6 @@ export const useSubscription = () => {
     return () => { active = false; };
   }, [user]);
 
-  const isActive =
-    sub?.status === "active";
-  return { sub, loading, isActive };
+  const isActive = isAdmin || sub?.status === "active";
+  return { sub, loading: loading || adminLoading, isActive };
 };
