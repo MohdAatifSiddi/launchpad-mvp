@@ -172,6 +172,7 @@ export type Database = {
       }
       contracts: {
         Row: {
+          analysis: Json
           char_count: number
           created_at: string
           doc_type: string | null
@@ -203,6 +204,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          analysis?: Json
           char_count?: number
           created_at?: string
           doc_type?: string | null
@@ -234,6 +236,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          analysis?: Json
           char_count?: number
           created_at?: string
           doc_type?: string | null
