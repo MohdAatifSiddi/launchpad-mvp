@@ -1,5 +1,5 @@
 
-# NyayAI Research MVP — Pre-Seed & First 100 Paying Lawyers
+# Weybre AI Research MVP — Pre-Seed & First 100 Paying Lawyers
 
 ## Beachhead
 **AI-powered case-law research for solo lawyers + small firms (1–10) in India.** Paid-only from day one. Indian Supreme Court corpus (your uploaded ~18K judgments) powers semantic search, AI answers with citations, and grounds a lightweight drafting assist.
