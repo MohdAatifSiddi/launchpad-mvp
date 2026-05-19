@@ -45,6 +45,36 @@ export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?
           <Link to="/app"><Logo variant="light" /></Link>
         </div>
 
+        {orgs.length > 0 && (
+          <div className="border-b border-sidebar-border px-3 py-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex w-full items-center justify-between gap-2 rounded-md bg-sidebar-accent/40 px-3 py-2 text-left text-sm hover:bg-sidebar-accent">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{currentOrg?.name ?? "Select organization"}</div>
+                    {currentOrg && <div className="truncate text-xs capitalize text-sidebar-foreground/60">{currentOrg.role}</div>}
+                  </div>
+                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-60">
+                <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+                {orgs.map(o => (
+                  <DropdownMenuItem key={o.id} onClick={() => setCurrentOrgId(o.id)}>
+                    <Check className={cn("mr-2 h-4 w-4", currentOrg?.id === o.id ? "opacity-100" : "opacity-0")} />
+                    <span className="truncate">{o.name}</span>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/app/organizations")}>
+                  <Building2 className="mr-2 h-4 w-4" />Manage organizations
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+
+
         <nav className="flex-1 space-y-1 p-3">
           {NAV.map(item => (
             <NavLink
