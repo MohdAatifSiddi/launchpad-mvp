@@ -26,6 +26,7 @@ export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?
   const { user, signOut } = useAuth();
   const { sub, loading, isActive } = useSubscription();
   const { isAdmin } = useIsAdmin();
+  const { orgs, currentOrg, setCurrentOrgId } = useOrganizations();
   const navigate = useNavigate();
   const location = useLocation();
 
