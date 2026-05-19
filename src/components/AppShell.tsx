@@ -1,11 +1,13 @@
 import { forwardRef, ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck, LayoutDashboard, Sparkles, Gavel, Inbox } from "lucide-react";
+import { FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck, LayoutDashboard, Sparkles, Gavel, Inbox, Building2, ChevronsUpDown, Check } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useOrganizations } from "@/hooks/useOrganizations";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
@@ -16,6 +18,7 @@ const NAV = [
   { to: "/app/intake",   label: "Contract Intake", icon: Inbox },
   { to: "/app/matters",  label: "Matters",  icon: FolderOpen },
   { to: "/app/drafts",   label: "Drafts",   icon: FileText },
+  { to: "/app/organizations", label: "Organizations", icon: Building2 },
   { to: "/app/settings", label: "Settings", icon: SettingsIcon },
 ];
 
