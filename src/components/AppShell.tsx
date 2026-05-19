@@ -1,11 +1,13 @@
 import { forwardRef, ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck, LayoutDashboard, Sparkles, Gavel, Inbox } from "lucide-react";
+import { FileText, FolderOpen, Settings as SettingsIcon, LogOut, Search, ShieldCheck, LayoutDashboard, Sparkles, Gavel, Inbox, Building2, ChevronsUpDown, Check } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useOrganizations } from "@/hooks/useOrganizations";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
@@ -16,6 +18,7 @@ const NAV = [
   { to: "/app/intake",   label: "Contract Intake", icon: Inbox },
   { to: "/app/matters",  label: "Matters",  icon: FolderOpen },
   { to: "/app/drafts",   label: "Drafts",   icon: FileText },
+  { to: "/app/organizations", label: "Organizations", icon: Building2 },
   { to: "/app/settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -23,6 +26,7 @@ export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?
   const { user, signOut } = useAuth();
   const { sub, loading, isActive } = useSubscription();
   const { isAdmin } = useIsAdmin();
+  const { orgs, currentOrg, setCurrentOrgId } = useOrganizations();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -40,6 +44,36 @@ export const AppShell = forwardRef<HTMLDivElement, { children: ReactNode; title?
         <div className="border-b border-sidebar-border p-5">
           <Link to="/app"><Logo variant="light" /></Link>
         </div>
+
+        {orgs.length > 0 && (
+          <div className="border-b border-sidebar-border px-3 py-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex w-full items-center justify-between gap-2 rounded-md bg-sidebar-accent/40 px-3 py-2 text-left text-sm hover:bg-sidebar-accent">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{currentOrg?.name ?? "Select organization"}</div>
+                    {currentOrg && <div className="truncate text-xs capitalize text-sidebar-foreground/60">{currentOrg.role}</div>}
+                  </div>
+                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-60">
+                <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+                {orgs.map(o => (
+                  <DropdownMenuItem key={o.id} onClick={() => setCurrentOrgId(o.id)}>
+                    <Check className={cn("mr-2 h-4 w-4", currentOrg?.id === o.id ? "opacity-100" : "opacity-0")} />
+                    <span className="truncate">{o.name}</span>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/app/organizations")}>
+                  <Building2 className="mr-2 h-4 w-4" />Manage organizations
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+
 
         <nav className="flex-1 space-y-1 p-3">
           {NAV.map(item => (

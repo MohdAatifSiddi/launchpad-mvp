@@ -720,6 +720,112 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          plan: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          plan?: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          plan?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           bar_council_number: string | null
@@ -913,6 +1019,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_organization_invite: { Args: { _token: string }; Returns: string }
+      has_org_role: {
+        Args: {
+          _min: Database["public"]["Enums"]["org_role"]
+          _org: string
+          _user: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -920,6 +1035,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
       search_judgments: {
         Args: {
           match_count?: number
@@ -944,6 +1060,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "lawyer"
+      org_role: "owner" | "admin" | "member"
       plan_tier: "solo" | "firm"
       sub_status:
         | "trialing"
@@ -1079,6 +1196,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "lawyer"],
+      org_role: ["owner", "admin", "member"],
       plan_tier: ["solo", "firm"],
       sub_status: ["trialing", "active", "past_due", "cancelled", "incomplete"],
     },

@@ -10,6 +10,9 @@ import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import Pricing from "./pages/Pricing.tsx";
+import Organizations from "./pages/Organizations.tsx";
+import AcceptInvite from "./pages/AcceptInvite.tsx";
+import { OrganizationsProvider } from "@/hooks/useOrganizations";
 import Dashboard from "./pages/Dashboard.tsx";
 import Research from "./pages/Research.tsx";
 import Decide from "./pages/Decide.tsx";
@@ -40,6 +43,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <OrganizationsProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
@@ -48,6 +52,8 @@ const App = () => (
             <Route path="/features" element={<Features />} />
             <Route path="/features/:slug" element={<Features />} />
             <Route path="/posts/:slug" element={<Post />} />
+            <Route path="/invite/:token" element={<AcceptInvite />} />
+            <Route path="/app/organizations" element={<ProtectedRoute><Organizations /></ProtectedRoute>} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/app/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
@@ -67,6 +73,7 @@ const App = () => (
             <Route path="/admin/posts" element={<ProtectedRoute><AdminRoute><AdminPosts /></AdminRoute></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </OrganizationsProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
